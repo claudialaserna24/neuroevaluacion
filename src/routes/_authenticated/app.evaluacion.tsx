@@ -35,7 +35,7 @@ type Question = {
 
 const SCALE_OPTIONS: Record<Question["scale"], { value: number; label: string }[]> = {
   cog3: [
-    { value: 1, label: "Siempre" },
+    { value: 2, label: "Siempre" },
     { value: 1, label: "Algunas veces" },
     { value: 0, label: "Nunca" },
   ],
