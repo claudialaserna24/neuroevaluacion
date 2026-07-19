@@ -65,7 +65,7 @@ function AuthPage() {
           {tab === "login" ? (
             <LoginForm onSuccess={() => goNext("/app")} next={next} />
           ) : (
-            <RegisterForm onSuccess={() => goNext("/onboarding")} next={next} />
+            <RegisterForm onSuccess={() => goNext("/app")} next={next} />
           )}
         </div>
 
@@ -238,7 +238,7 @@ function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: strin
           password,
           options: {
             emailRedirectTo:
-              window.location.origin + (next ?? "/onboarding"),
+              window.location.origin + (next ?? "/app"),
             data: { full_name: name, role },
           },
         });
