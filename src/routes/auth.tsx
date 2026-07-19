@@ -17,6 +17,11 @@ export const Route = createFileRoute("/auth")({
       },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
+      ? s.next
+      : undefined,
+  }),
   component: AuthPage,
 });
 
@@ -26,6 +31,16 @@ type Role = "usuario" | "administrador";
 function AuthPage() {
   const [tab, setTab] = useState<Tab>("login");
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+
+  const goNext = (fallback: "/app" | "/onboarding") => {
+    if (next) {
+      // Same-origin relative path already validated by validateSearch.
+      window.location.href = next;
+      return;
+    }
+    navigate({ to: fallback });
+  };
 
   return (
     <div className="min-h-screen bg-muted/40 px-4 py-8">
@@ -48,9 +63,9 @@ function AuthPage() {
 
         <div className="rounded-3xl bg-card p-2 shadow-sm ring-1 ring-border/50">
           {tab === "login" ? (
-            <LoginForm onSuccess={() => navigate({ to: "/app" })} />
+            <LoginForm onSuccess={() => goNext("/app")} next={next} />
           ) : (
-            <RegisterForm onSuccess={() => navigate({ to: "/onboarding" })} />
+            <RegisterForm onSuccess={() => goNext("/onboarding")} next={next} />
           )}
         </div>
 
@@ -130,7 +145,7 @@ function FloatingField({
   );
 }
 
-function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+function LoginForm({ onSuccess, next }: { onSuccess: () => void; next?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -200,12 +215,12 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       </button>
 
       <SocialDivider />
-      <GoogleButton />
+      <GoogleButton next={next} />
     </form>
   );
 }
 
-function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
+function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -222,7 +237,8 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin + "/app",
+            emailRedirectTo:
+              window.location.origin + (next ?? "/onboarding"),
             data: { full_name: name, role },
           },
         });
@@ -298,7 +314,7 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
       </button>
 
       <SocialDivider />
-      <GoogleButton />
+      <GoogleButton next={next} />
     </form>
   );
 }
@@ -353,13 +369,13 @@ function SocialDivider() {
   );
 }
 
-function GoogleButton() {
+function GoogleButton({ next }: { next?: string }) {
   return (
     <button
       type="button"
       onClick={async () => {
         const result = await lovable.auth.signInWithOAuth("google", {
-          redirect_uri: window.location.origin + "/app",
+          redirect_uri: window.location.origin + (next ?? "/app"),
         });
         if (result.error) toast.error(result.error.message ?? "No se pudo iniciar sesión con Google");
       }}
