@@ -89,6 +89,7 @@ export type Database = {
           created_at: string
           current_question_id: string | null
           id: string
+          patient_id: string
           status: Database["public"]["Enums"]["assessment_status"]
           updated_at: string
           user_id: string
@@ -98,6 +99,7 @@ export type Database = {
           created_at?: string
           current_question_id?: string | null
           id?: string
+          patient_id: string
           status?: Database["public"]["Enums"]["assessment_status"]
           updated_at?: string
           user_id: string
@@ -107,6 +109,7 @@ export type Database = {
           created_at?: string
           current_question_id?: string | null
           id?: string
+          patient_id?: string
           status?: Database["public"]["Enums"]["assessment_status"]
           updated_at?: string
           user_id?: string
@@ -119,15 +122,23 @@ export type Database = {
             referencedRelation: "assessment_questions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
         ]
       }
-      initial_reports: {
+      neurodevelopment_roadmaps: {
         Row: {
           assessment_id: string
           cognitive: Json
           functional: Json
           generated_at: string
           id: string
+          patient_id: string
           priorities: Json
           reflexes: Json
           user_id: string
@@ -138,6 +149,7 @@ export type Database = {
           functional: Json
           generated_at?: string
           id?: string
+          patient_id: string
           priorities: Json
           reflexes: Json
           user_id: string
@@ -148,6 +160,7 @@ export type Database = {
           functional?: Json
           generated_at?: string
           id?: string
+          patient_id?: string
           priorities?: Json
           reflexes?: Json
           user_id?: string
@@ -160,7 +173,65 @@ export type Database = {
             referencedRelation: "assessments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "neurodevelopment_roadmaps_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      patients: {
+        Row: {
+          city: string | null
+          created_at: string
+          date_of_birth: string
+          developmental_history: string | null
+          diagnosis: string | null
+          first_name: string
+          id: string
+          interventions: string | null
+          last_name: string
+          parent_email: string | null
+          parent_name: string | null
+          parent_phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          date_of_birth: string
+          developmental_history?: string | null
+          diagnosis?: string | null
+          first_name: string
+          id?: string
+          interventions?: string | null
+          last_name: string
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          date_of_birth?: string
+          developmental_history?: string | null
+          diagnosis?: string | null
+          first_name?: string
+          id?: string
+          interventions?: string | null
+          last_name?: string
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
