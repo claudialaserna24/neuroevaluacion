@@ -26,15 +26,15 @@ function Onboarding() {
             Bienvenido/a a NEUROPLAN.
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Estamos preparando tu evaluación. En unos minutos vas a responder
-            preguntas sobre el perfil cognitivo, funcional y de reflejos
-            primitivos de tu hijo/a. Puedes pausar y retomar cuando quieras.
+            Antes de comenzar la evaluación registra los datos de tu hijo/a.
+            Después responderás preguntas sobre su perfil cognitivo, funcional
+            y reflejos primitivos. Puedes pausar y retomar cuando quieras.
           </p>
           <Link
-            to="/"
+            to="/app/pacientes"
             className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
           >
-            Comenzar
+            Registrar paciente
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
