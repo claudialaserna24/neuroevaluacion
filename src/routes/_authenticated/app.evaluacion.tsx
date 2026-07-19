@@ -213,7 +213,7 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
           {currentQ.category ? ` · ${currentQ.category}` : ""}
         </p>
         <p className="mt-2 font-serif text-xl leading-snug text-foreground">
-          {currentQ.title}
+          {renderQuestionText(currentQ.title)}
         </p>
         {currentQ.description ? (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
