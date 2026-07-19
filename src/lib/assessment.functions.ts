@@ -121,11 +121,11 @@ export const getRoadmap = createServerFn({ method: "GET" })
   .inputValidator((d: { patientId: string }) =>
     z.object({ patientId: z.string().uuid() }).parse(d),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data: input, context }) => {
     const { data, error } = await context.supabase
       .from("neurodevelopment_roadmaps")
       .select("*")
-      .eq("patient_id", data.patientId)
+      .eq("patient_id", input.patientId)
       .order("generated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
