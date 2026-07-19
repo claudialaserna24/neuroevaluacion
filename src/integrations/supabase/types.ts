@@ -14,16 +14,247 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessment_answers: {
+        Row: {
+          answered_at: string
+          assessment_id: string
+          id: string
+          question_id: string
+          value: number
+        }
+        Insert: {
+          answered_at?: string
+          assessment_id: string
+          id?: string
+          question_id: string
+          value: number
+        }
+        Update: {
+          answered_at?: string
+          assessment_id?: string
+          id?: string
+          question_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_answers_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_questions: {
+        Row: {
+          category: string | null
+          dimension: string
+          id: string
+          module: Database["public"]["Enums"]["assessment_module"]
+          order_index: number
+          scale: Database["public"]["Enums"]["answer_scale"]
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          dimension: string
+          id?: string
+          module: Database["public"]["Enums"]["assessment_module"]
+          order_index: number
+          scale: Database["public"]["Enums"]["answer_scale"]
+          title: string
+        }
+        Update: {
+          category?: string | null
+          dimension?: string
+          id?: string
+          module?: Database["public"]["Enums"]["assessment_module"]
+          order_index?: number
+          scale?: Database["public"]["Enums"]["answer_scale"]
+          title?: string
+        }
+        Relationships: []
+      }
+      assessments: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_question_id: string | null
+          id: string
+          status: Database["public"]["Enums"]["assessment_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_question_id?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["assessment_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_question_id?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["assessment_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_current_question_id_fkey"
+            columns: ["current_question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      initial_reports: {
+        Row: {
+          assessment_id: string
+          cognitive: Json
+          functional: Json
+          generated_at: string
+          id: string
+          priorities: Json
+          reflexes: Json
+          user_id: string
+        }
+        Insert: {
+          assessment_id: string
+          cognitive: Json
+          functional: Json
+          generated_at?: string
+          id?: string
+          priorities: Json
+          reflexes: Json
+          user_id: string
+        }
+        Update: {
+          assessment_id?: string
+          cognitive?: Json
+          functional?: Json
+          generated_at?: string
+          id?: string
+          priorities?: Json
+          reflexes?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "initial_reports_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          child_dob: string | null
+          child_name: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          child_dob?: string | null
+          child_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          child_dob?: string | null
+          child_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_consents: {
+        Row: {
+          accepted_at: string
+          id: string
+          policy_kind: string
+          policy_version: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          policy_kind: string
+          policy_version: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          policy_kind?: string
+          policy_version?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      answer_scale: "cog3" | "func10" | "reflex5"
+      app_role: "usuario" | "administrador"
+      assessment_module: "cognitive" | "functional" | "reflex"
+      assessment_status: "in_progress" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +381,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      answer_scale: ["cog3", "func10", "reflex5"],
+      app_role: ["usuario", "administrador"],
+      assessment_module: ["cognitive", "functional", "reflex"],
+      assessment_status: ["in_progress", "completed"],
+    },
   },
 } as const
