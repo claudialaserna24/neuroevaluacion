@@ -28,7 +28,7 @@ type Question = {
   module: "cognitive" | "functional" | "reflex";
   dimension: string;
   order_index: number;
-  prompt: string;
+  title: string;
   scale: "cog3" | "func10" | "reflex5";
 };
 
@@ -74,11 +74,11 @@ function EvaluacionRunner() {
     (async () => {
       const { data: qs } = await supabase
         .from("assessment_questions")
-        .select("id, module, dimension, order_index, prompt, scale")
+        .select("id, module, dimension, order_index, title, scale")
         .order("module")
         .order("order_index");
       const state = await fetchState();
-      setQuestions((qs ?? []) as Question[]);
+      setQuestions((qs ?? []) as unknown as Question[]);
       setAssessmentId(state.assessment.id);
       const map = new Map<string, number>();
       for (const a of state.answered) map.set(a.question_id, a.value);
@@ -193,7 +193,7 @@ function EvaluacionRunner() {
           {currentQ.dimension}
         </p>
         <p className="mt-2 font-serif text-xl leading-snug text-foreground">
-          {currentQ.prompt}
+          {currentQ.title}
         </p>
 
         <div className={cn("mt-6 grid gap-2", currentQ.scale === "func10" ? "grid-cols-6" : "grid-cols-1")}>
