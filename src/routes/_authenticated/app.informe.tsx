@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Lock, ArrowRight, Download } from "lucide-react";
-import { getMyReport } from "@/lib/assessment.functions";
+import { getRoadmap } from "@/lib/assessment.functions";
 import type {
   CognitiveResult,
   FunctionalArea,
@@ -13,6 +14,8 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/informe")({
   head: () => ({ meta: [{ title: "Hoja de Ruta — NEUROPLAN" }, { name: "robots", content: "noindex" }] }),
+  validateSearch: (s: Record<string, unknown>) =>
+    z.object({ patient: z.string().uuid() }).parse(s),
   component: InformePage,
 });
 
@@ -24,10 +27,11 @@ type Report = {
 };
 
 function InformePage() {
-  const fetchReport = useServerFn(getMyReport);
+  const { patient } = Route.useSearch();
+  const fetchReport = useServerFn(getRoadmap);
   const { data, isLoading } = useQuery({
-    queryKey: ["my-report"],
-    queryFn: () => fetchReport(),
+    queryKey: ["roadmap", patient],
+    queryFn: () => fetchReport({ data: { patientId: patient } }),
   });
 
   if (isLoading) {
@@ -42,6 +46,7 @@ function InformePage() {
         </p>
         <Link
           to="/app/evaluacion"
+          search={{ patient }}
           className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
         >
           Continuar evaluación <ArrowRight className="h-4 w-4" />

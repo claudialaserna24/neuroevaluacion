@@ -21,9 +21,11 @@ export default defineTool({
     }
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase
-      .from("initial_reports")
-      .select("cognitive, functional, reflexes, priorities, generated_at")
+      .from("neurodevelopment_roadmaps")
+      .select("cognitive, functional, reflexes, priorities, generated_at, patient_id")
       .eq("user_id", ctx.getUserId())
+      .order("generated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     if (!data) {

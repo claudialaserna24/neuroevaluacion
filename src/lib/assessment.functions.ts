@@ -5,19 +5,31 @@ import { computeReport } from "./report-engine";
 
 export const getAssessmentState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: { patientId: string }) =>
+    z.object({ patientId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    // Existing assessment
+
+    // Verify the patient belongs to the user (RLS also enforces this)
+    const { data: patient } = await supabase
+      .from("patients")
+      .select("id")
+      .eq("id", data.patientId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!patient) throw new Error("Paciente no encontrado");
+
     let { data: assessment } = await supabase
       .from("assessments")
       .select("*")
-      .eq("user_id", userId)
+      .eq("patient_id", data.patientId)
       .maybeSingle();
 
     if (!assessment) {
       const { data: created, error } = await supabase
         .from("assessments")
-        .insert({ user_id: userId, status: "in_progress" })
+        .insert({ user_id: userId, patient_id: data.patientId, status: "in_progress" })
         .select("*")
         .single();
       if (error) throw error;
@@ -29,10 +41,7 @@ export const getAssessmentState = createServerFn({ method: "GET" })
       .select("question_id, value")
       .eq("assessment_id", assessment.id);
 
-    return {
-      assessment,
-      answered: answers ?? [],
-    };
+    return { assessment, answered: answers ?? [] };
   });
 
 export const saveAnswer = createServerFn({ method: "POST" })
@@ -71,6 +80,13 @@ export const completeAssessment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
+    const { data: assessmentRow, error: aErr } = await supabase
+      .from("assessments")
+      .select("id, patient_id")
+      .eq("id", data.assessmentId)
+      .single();
+    if (aErr || !assessmentRow) throw aErr ?? new Error("Evaluación no encontrada");
+
     const { data: questions } = await supabase
       .from("assessment_questions")
       .select("id, module, dimension, order_index, scale");
@@ -81,16 +97,17 @@ export const completeAssessment = createServerFn({ method: "POST" })
 
     const report = computeReport(questions ?? [], answers ?? []);
 
-    await supabase.from("initial_reports").upsert(
+    await supabase.from("neurodevelopment_roadmaps").upsert(
       {
         user_id: userId,
+        patient_id: assessmentRow.patient_id,
         assessment_id: data.assessmentId,
         cognitive: report.cognitive,
         functional: report.functional,
         reflexes: report.reflexes,
         priorities: report.priorities,
       },
-      { onConflict: "user_id" },
+      { onConflict: "patient_id,assessment_id" },
     );
     await supabase
       .from("assessments")
@@ -99,13 +116,18 @@ export const completeAssessment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const getMyReport = createServerFn({ method: "GET" })
+export const getRoadmap = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: { patientId: string }) =>
+    z.object({ patientId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data: input, context }) => {
     const { data, error } = await context.supabase
-      .from("initial_reports")
+      .from("neurodevelopment_roadmaps")
       .select("*")
-      .eq("user_id", context.userId)
+      .eq("patient_id", input.patientId)
+      .order("generated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (error) throw error;
     return data;

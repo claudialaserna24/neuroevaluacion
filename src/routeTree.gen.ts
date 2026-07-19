@@ -19,10 +19,12 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
+import { Route as AuthenticatedAppPacientesRouteImport } from './routes/_authenticated/app.pacientes'
 import { Route as AuthenticatedAppInformeRouteImport } from './routes/_authenticated/app.informe'
 import { Route as AuthenticatedAppEvaluacionRouteImport } from './routes/_authenticated/app.evaluacion'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as AuthenticatedAppPacientesPatientIdRouteImport } from './routes/_authenticated/app.pacientes.$patientId'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -75,6 +77,12 @@ const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppPacientesRoute =
+  AuthenticatedAppPacientesRouteImport.update({
+    id: '/pacientes',
+    path: '/pacientes',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppInformeRoute = AuthenticatedAppInformeRouteImport.update({
   id: '/informe',
   path: '/informe',
@@ -97,6 +105,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAppPacientesPatientIdRoute =
+  AuthenticatedAppPacientesPatientIdRouteImport.update({
+    id: '/$patientId',
+    path: '/$patientId',
+    getParentRoute: () => AuthenticatedAppPacientesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,8 +124,10 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
   '/app/informe': typeof AuthenticatedAppInformeRoute
+  '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -124,8 +140,10 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
   '/app/informe': typeof AuthenticatedAppInformeRoute
+  '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,8 +159,10 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
   '/_authenticated/app/informe': typeof AuthenticatedAppInformeRoute
+  '/_authenticated/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -158,8 +178,10 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/app/evaluacion'
     | '/app/informe'
+    | '/app/pacientes'
     | '/app/perfil'
     | '/app/'
+    | '/app/pacientes/$patientId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -172,8 +194,10 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/app/evaluacion'
     | '/app/informe'
+    | '/app/pacientes'
     | '/app/perfil'
     | '/app'
+    | '/app/pacientes/$patientId'
   id:
     | '__root__'
     | '/'
@@ -188,8 +212,10 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/app/evaluacion'
     | '/_authenticated/app/informe'
+    | '/_authenticated/app/pacientes'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/'
+    | '/_authenticated/app/pacientes/$patientId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -276,6 +302,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPerfilRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/pacientes': {
+      id: '/_authenticated/app/pacientes'
+      path: '/pacientes'
+      fullPath: '/app/pacientes'
+      preLoaderRoute: typeof AuthenticatedAppPacientesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/informe': {
       id: '/_authenticated/app/informe'
       path: '/informe'
@@ -304,12 +337,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/app/pacientes/$patientId': {
+      id: '/_authenticated/app/pacientes/$patientId'
+      path: '/$patientId'
+      fullPath: '/app/pacientes/$patientId'
+      preLoaderRoute: typeof AuthenticatedAppPacientesPatientIdRouteImport
+      parentRoute: typeof AuthenticatedAppPacientesRoute
+    }
   }
 }
+
+interface AuthenticatedAppPacientesRouteChildren {
+  AuthenticatedAppPacientesPatientIdRoute: typeof AuthenticatedAppPacientesPatientIdRoute
+}
+
+const AuthenticatedAppPacientesRouteChildren: AuthenticatedAppPacientesRouteChildren =
+  {
+    AuthenticatedAppPacientesPatientIdRoute:
+      AuthenticatedAppPacientesPatientIdRoute,
+  }
+
+const AuthenticatedAppPacientesRouteWithChildren =
+  AuthenticatedAppPacientesRoute._addFileChildren(
+    AuthenticatedAppPacientesRouteChildren,
+  )
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppEvaluacionRoute: typeof AuthenticatedAppEvaluacionRoute
   AuthenticatedAppInformeRoute: typeof AuthenticatedAppInformeRoute
+  AuthenticatedAppPacientesRoute: typeof AuthenticatedAppPacientesRouteWithChildren
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -317,6 +373,7 @@ interface AuthenticatedAppRouteChildren {
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppEvaluacionRoute: AuthenticatedAppEvaluacionRoute,
   AuthenticatedAppInformeRoute: AuthenticatedAppInformeRoute,
+  AuthenticatedAppPacientesRoute: AuthenticatedAppPacientesRouteWithChildren,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
