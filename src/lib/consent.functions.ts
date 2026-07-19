@@ -39,7 +39,8 @@ export const revokeMyData = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     // Elimina respuestas, informes y evaluación del usuario. Mantiene profile/roles.
     const uid = context.userId;
-    await context.supabase.from("initial_reports").delete().eq("user_id", uid);
+    await context.supabase.from("neurodevelopment_roadmaps").delete().eq("user_id", uid);
     await context.supabase.from("assessments").delete().eq("user_id", uid);
+    await context.supabase.from("patients").delete().eq("user_id", uid);
     return { ok: true };
   });
