@@ -1,8 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect } from "react";
 import { ArrowRight, UserPlus, Users } from "lucide-react";
 import { listMyPatients, computeAgeYears } from "@/lib/patients.functions";
+import { getOnboardingState } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({ meta: [{ title: "Inicio — NEUROPLAN" }, { name: "robots", content: "noindex" }] }),
@@ -10,8 +12,55 @@ export const Route = createFileRoute("/_authenticated/app/")({
 });
 
 function DashboardHome() {
+  const fetchState = useServerFn(getOnboardingState);
   const fetchPatients = useServerFn(listMyPatients);
-  const patients = useQuery({ queryKey: ["my-patients"], queryFn: () => fetchPatients() });
+  const navigate = useNavigate();
+
+  const state = useQuery({ queryKey: ["onboarding-state"], queryFn: () => fetchState() });
+
+  useEffect(() => {
+    if (!state.data) return;
+    const s = state.data;
+    if (!s.hasConsent) {
+      navigate({ to: "/consentimiento", replace: true });
+      return;
+    }
+    if (!s.activePatientId) {
+      navigate({ to: "/app/pacientes", search: { first: "1" }, replace: true });
+      return;
+    }
+    if (!s.onboardingCompleted) {
+      navigate({ to: "/onboarding", search: { patient: s.activePatientId }, replace: true });
+      return;
+    }
+    if (s.activeAssessmentId) {
+      navigate({
+        to: "/app/evaluacion",
+        search: { patient: s.activePatientId },
+        replace: true,
+      });
+      return;
+    }
+    // else: onboarding completed + no active assessment → dashboard
+  }, [state.data, navigate]);
+
+  const patients = useQuery({
+    queryKey: ["my-patients"],
+    queryFn: () => fetchPatients(),
+    enabled:
+      !!state.data &&
+      state.data.hasConsent &&
+      !!state.data.activePatientId &&
+      state.data.onboardingCompleted &&
+      !state.data.activeAssessmentId,
+  });
+
+  if (!state.data || !state.data.hasConsent || !state.data.activePatientId ||
+      !state.data.onboardingCompleted || state.data.activeAssessmentId) {
+    return (
+      <div className="py-16 text-center text-sm text-muted-foreground">Cargando…</div>
+    );
+  }
 
   const list = patients.data ?? [];
 
