@@ -30,15 +30,16 @@ type Question = {
   order_index: number;
   title: string;
   scale: "cog3" | "func10" | "reflex5";
+  category?: string | null;
 };
 
 const SCALE_OPTIONS: Record<Question["scale"], { value: number; label: string }[]> = {
   cog3: [
-    { value: 2, label: "Siempre" },
+    { value: 1, label: "Siempre" },
     { value: 1, label: "Algunas veces" },
     { value: 0, label: "Nunca" },
   ],
-  func10: Array.from({ length: 11 }, (_, i) => ({ value: i, label: String(i) })),
+  func10: Array.from({ length: 10 }, (_, i) => ({ value: i + 1, label: String(i + 1) })),
   reflex5: [
     { value: 0, label: "0 · Ausente" },
     { value: 1, label: "1 · Muy leve" },
@@ -74,7 +75,7 @@ function EvaluacionRunner() {
     (async () => {
       const { data: qs } = await supabase
         .from("assessment_questions")
-        .select("id, module, dimension, order_index, title, scale")
+        .select("id, module, dimension, category, order_index, title, scale")
         .order("module")
         .order("order_index");
       const state = await fetchState();
@@ -191,17 +192,18 @@ function EvaluacionRunner() {
       <div className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-border/50">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">
           {currentQ.dimension}
+          {currentQ.category ? ` · ${currentQ.category}` : ""}
         </p>
         <p className="mt-2 font-serif text-xl leading-snug text-foreground">
           {currentQ.title}
         </p>
 
-        <div className={cn("mt-6 grid gap-2", currentQ.scale === "func10" ? "grid-cols-6" : "grid-cols-1")}>
+        <div className={cn("mt-6 grid gap-2", currentQ.scale === "func10" ? "grid-cols-5" : "grid-cols-1")}>
           {options.map((opt) => {
             const active = selectedValue === opt.value;
             return (
               <button
-                key={opt.value}
+                key={`${opt.value}-${opt.label}`}
                 onClick={() => handleAnswer(opt.value)}
                 disabled={saving}
                 className={cn(
