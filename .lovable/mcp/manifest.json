@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "sdk_version": "0.23.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://ajdxhvcijmoybqszdfon.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "neuroplan-mcp",
+      "version": "0.1.0",
+      "title": "NEUROPLAN"
+    },
+    "tools": [
+      {
+        "name": "get_assessment_status",
+        "title": "Consultar estado de la evaluación",
+        "description": "Devuelve el estado actual de la Evaluación Inteligente del usuario autenticado: total de preguntas respondidas, progreso por módulo (Perfil Cognitivo, Evaluación Funcional, Reflejos Primitivos) y si el proceso está en curso o completado.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_initial_report",
+        "title": "Obtener Hoja de Ruta (informe inicial)",
+        "description": "Devuelve el Informe Inicial / Hoja de Ruta del usuario autenticado si ya completó la evaluación. Incluye los puntajes por dimensión de Perfil Cognitivo, Evaluación Funcional y Reflejos Primitivos, más las prioridades identificadas. No emite diagnósticos clínicos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_profile",
+        "title": "Consultar perfil del usuario",
+        "description": "Devuelve el perfil básico del usuario autenticado en NEUROPLAN (nombre del acudiente, nombre y fecha de nacimiento del niño si están registrados).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
