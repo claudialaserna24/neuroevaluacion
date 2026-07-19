@@ -115,7 +115,12 @@ function InformePage() {
       </Section>
 
       {/* 3. Reflejos */}
-      <Section number={3} title="Patrones asociados a reflejos primitivos">
+      <Section number={3} title="Reflejos primitivos priorizados">
+        <p className="mb-3 rounded-xl bg-muted/40 p-3 text-xs text-muted-foreground">
+          Las respuestas obtenidas sugieren, cuando aparecen puntajes altos, una
+          mayor probabilidad de persistencia de ese reflejo. No representan un
+          diagnóstico clínico.
+        </p>
         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {reflexes.map((r) => (
             <li
