@@ -32,6 +32,7 @@ type Question = {
   dimension: string;
   order_index: number;
   title: string;
+  description?: string | null;
   scale: "cog3" | "func10" | "reflex5";
   category?: string | null;
 };
@@ -79,7 +80,7 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
     (async () => {
       const { data: qs } = await supabase
         .from("assessment_questions")
-        .select("id, module, dimension, category, order_index, title, scale")
+        .select("id, module, dimension, category, order_index, title, description, scale")
         .order("module")
         .order("order_index");
       const state = await fetchState({ data: { patientId } });
@@ -201,6 +202,11 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
         <p className="mt-2 font-serif text-xl leading-snug text-foreground">
           {currentQ.title}
         </p>
+        {currentQ.description ? (
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {currentQ.description}
+          </p>
+        ) : null}
 
         <div className={cn("mt-6 grid gap-2", currentQ.scale === "func10" ? "grid-cols-5" : "grid-cols-1")}>
           {options.map((opt) => {
