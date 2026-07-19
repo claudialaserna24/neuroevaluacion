@@ -1,90 +1,115 @@
-## Objetivo
 
-Introducir la entidad **paciente (niño)** como eje del modelo de datos. Todas las evaluaciones y la Hoja de Ruta para el Neurodesarrollo pasarán a estar asociadas al paciente, no directamente al usuario. Un mismo acudiente (usuario) podrá tener uno o varios pacientes.
+# Módulo 0 — Flujo de incorporación del padre (solo lógica)
 
-## 1. Nueva tabla `public.patients`
+Objetivo: encadenar Landing → Auth → Consentimiento → Paciente → Onboarding → Evaluación de forma automática, sin rediseñar pantallas y sin IA. Se añade un único punto de decisión servidor + un despachador cliente que redirige al paso correcto.
 
-Campos:
+## 1. Backend
 
-- `id` uuid PK
-- `user_id` uuid → `auth.users` (acudiente responsable)
-- `first_name` text — nombres
-- `last_name` text — apellidos
-- `date_of_birth` date
-- `age_years` int **generado** desde `date_of_birth` (columna calculada, así "edad" nunca se desincroniza)
-- `diagnosis` text nullable — diagnóstico si lo tiene
-- `interventions` text nullable — terapias / protocolos recibidos
-- `developmental_history` text nullable — antecedentes importantes del desarrollo
-- `parent_name` text — nombre del padre/acudiente
-- `parent_email` text
-- `parent_phone` text
-- `city` text
-- `created_at`, `updated_at` con trigger `touch_updated_at`
+Migración (una sola):
 
-Seguridad:
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS onboarding_completed boolean NOT NULL DEFAULT false;
+```
 
-- `GRANT SELECT, INSERT, UPDATE, DELETE ... TO authenticated`, `GRANT ALL ... TO service_role` (sin `anon`).
-- RLS activa. Política única `patients_self_all`: `auth.uid() = user_id`.
+No se crean tablas nuevas. `handle_new_user` ya inserta el `profiles` en el signup, así que el flag arranca en `false` por default.
 
-## 2. Refactor de tablas existentes
+## 2. Server function única: `getOnboardingState`
 
-### `assessments`
+Nuevo archivo `src/lib/onboarding.functions.ts`, con `requireSupabaseAuth`. Devuelve un DTO plano que el cliente usa para decidir la siguiente ruta:
 
-- Añadir `patient_id uuid NOT NULL REFERENCES patients(id) ON DELETE CASCADE`.
-- Índice en `patient_id`.
-- Mantener `user_id` (redundante pero útil para RLS directa y auditoría).
-- Regla: una evaluación pertenece a **un** paciente.
-- Migración de datos existentes: para cada fila actual sin paciente, crear un `patients` placeholder por `user_id` (nombre "Paciente sin registrar") y enlazar. Así ninguna evaluación queda huérfana ni se rompe RLS.
+```ts
+{
+  hasConsent: boolean,          // user_consents WHERE policy_kind='habeas_data'
+  activePatientId: string | null, // último patients.created_at DESC
+  onboardingCompleted: boolean, // profiles.onboarding_completed
+  activeAssessmentId: string | null,   // assessments WHERE status='in_progress' del paciente activo
+  hasCompletedAssessment: boolean,     // assessments WHERE status='completed' del paciente activo
+}
+```
 
-### `assessment_answers`
+Segunda server fn `startEvaluationFromOnboarding({ patientId })`:
+1. `UPDATE profiles SET onboarding_completed=true WHERE id=auth.uid()`.
+2. Reutiliza la lógica actual de `getAssessmentState({ patientId })` para asegurar una evaluación `in_progress` (find-or-create).
+3. Devuelve `{ assessmentId }`.
 
-- Sin cambios estructurales. Sigue enlazado a `assessments`; el paciente se resuelve por join. RLS ya cubre por `assessments.user_id`.
+Todo pasa por RLS existente (`profiles_self_all`, `assessments_self_all`, `patients_self_all`, `consents_self_read`). No se tocan políticas.
 
-### `initial_reports` → renombrar a `neurodevelopment_roadmaps`
+## 3. Punto de decisión en el cliente
 
-- `ALTER TABLE ... RENAME TO neurodevelopment_roadmaps`.
-- Añadir `patient_id uuid NOT NULL REFERENCES patients(id) ON DELETE CASCADE`.
-- Cambiar la unicidad: hoy es `UNIQUE(user_id)` (implícito por el `upsert onConflict: user_id`). Pasa a `UNIQUE(patient_id, assessment_id)` para permitir una hoja de ruta por evaluación de cada paciente.
-- Mantener `user_id` para RLS directa.
+Se centraliza en `/app` (ya es la ruta raíz autenticada). Se convierte `src/routes/_authenticated/app.index.tsx` en despachador:
 
-### Preparación para futuras tablas
+- Al montar, llama `getOnboardingState` (loader + `useSuspenseQuery`, patrón estándar del template).
+- Redirige con `navigate({ replace: true })` según esta tabla — el usuario nunca elige el paso:
 
-Documentar (no crear todavía) el patrón para:
+| Estado | Redirige a |
+|---|---|
+| `!hasConsent` | `/consentimiento` |
+| `hasConsent && !activePatientId` | `/app/pacientes?first=1` (abre el formulario automáticamente) |
+| paciente OK, `!onboardingCompleted` | `/onboarding?patient=<id>` |
+| onboarding OK, `activeAssessmentId` presente | `/app/evaluacion?patient=<id>` (retoma) |
+| onboarding OK, evaluación `completed` | permanece en `/app` → renderiza el **Dashboard actual** (lista de pacientes / resumen) |
 
-- `interactive_plans (id, patient_id, user_id, assessment_id, ...)` — plan desbloqueado tras compra.
-- `moholka_conversations (id, patient_id, user_id, ...)` — hilos de acompañamiento IA.
-Ambas seguirán la misma convención: `patient_id NOT NULL`, `user_id` para RLS, política `self_all` por `auth.uid() = user_id`.
+Único caso que **renderiza contenido** en `/app`: el dashboard del usuario recurrente que ya terminó. El resto son redirecciones inmediatas → nunca se ve "flash" del dashboard.
 
-## 3. Ajustes de código (después de migración aprobada)
+## 4. Ajustes de rutas existentes (sin rediseñar UI)
 
-- `src/lib/assessment.functions.ts`
-  - `getAssessmentState` recibirá `patientId` y buscará/creará la evaluación **del paciente**, no del usuario.
-  - `completeAssessment` escribirá en `neurodevelopment_roadmaps` con `onConflict: 'patient_id,assessment_id'`.
-  - `getMyReport` → `getRoadmap({ patientId })`.
-- Nuevo `src/lib/patients.functions.ts`: `listMyPatients`, `createPatient`, `updatePatient`, `getPatient` (todos con `requireSupabaseAuth`, scoping por `user_id`).
-- `src/routes/_authenticated/`:
-  - Nueva ruta `app.pacientes.tsx` — lista de pacientes del acudiente + botón "Añadir paciente".
-  - Nueva ruta `app.pacientes.$patientId.tsx` — ficha con datos y accesos a Evaluación / Hoja de Ruta.
-  - `app.evaluacion.tsx` y `app.informe.tsx` pasarán a recibir `patientId` por search param o path param.
-  - `app.index.tsx` cambia el CTA: si no hay pacientes → "Registrar a tu hijo/a"; si hay uno → resumen de ese paciente; si hay varios → selector.
-- `src/lib/mcp/tools/*`: las tres tools aceptarán `patient_id` opcional (si el usuario tiene uno, se auto-selecciona; si tiene varios, se requiere).
-- `src/routes/onboarding.tsx`: tras el consentimiento de Habeas Data, se añade un paso corto "Registra a tu hijo/a" que crea el primer `patients` antes de habilitar la evaluación.
+### `src/routes/auth.tsx`
+- Login `onSuccess` → `navigate({ to: "/app" })` (hoy ya).
+- Register `onSuccess` → **también** `navigate({ to: "/app" })` en vez de `/onboarding`. El despachador se encarga de mandarlo a consent → paciente → onboarding.
+- `emailRedirectTo` pasa a `${origin}/app`.
 
-## 4. Copy / terminología en UI
+### `src/routes/onboarding.tsx`
+- Acepta search param `patient` (uuid).
+- Copy actualizado (según brief):
+  - Menciona los 3 módulos: Perfil Cognitivo, Evaluación Funcional, Patrones Asociados a Reflejos Primitivos.
+  - Menciona pausa/autoguardado y "al finalizar recibirás una Hoja de Ruta para el Neurodesarrollo".
+  - Se elimina toda mención a diagnósticos.
+- Botón único **"Comenzar evaluación"**: llama `startEvaluationFromOnboarding({ patientId })` y luego `navigate({ to: "/app/evaluacion", search: { patient: patientId } })`.
+- Si llega sin `patient` en la URL, el propio despachador lo habrá mandado antes al paso correcto; como salvaguarda extra, la página también llama a `getOnboardingState` y se auto-corrige.
 
-- "Informe inicial" / "Hoja de Ruta" → **"Hoja de Ruta para el Neurodesarrollo"** en toda la UI y PDF.
-- Referencias en `brand-copy.ts` y en `app.informe.tsx` se actualizan en el mismo paso.
+### Nueva ruta pública/gated `src/routes/_authenticated/consentimiento.tsx`
+- Reutiliza el componente `HabeasDataGate` que ya existe. Se monta como página completa (no como overlay) para que el flujo sea el "paso" que describes.
+- Al aceptar (`acceptHabeasData` ya existe) → `navigate({ to: "/app", replace: true })`.
+- La versión modal del `HabeasDataGate` sigue disponible por si se necesita en otro lugar, pero en este módulo se usa como página.
 
-## 5. Orden de ejecución
+### `src/routes/_authenticated/app.pacientes.tsx`
+- Añade `validateSearch` con `first?: "1"`. Si `first === "1"` y no hay pacientes:
+  - Abre el formulario `NewPatientForm` automáticamente (equivalente a `showForm=true` inicial).
+  - Al guardar exitosamente, en lugar de navegar al detalle del paciente, `navigate({ to: "/onboarding", search: { patient: row.id } })`.
+- Comportamiento normal (sin `first=1`) se mantiene: alta manual desde el CRUD que sigue igual.
 
-1. **Migración SQL** (una sola): crear `patients` + grants + RLS, backfill placeholders, añadir `patient_id` a `assessments` (NOT NULL tras backfill), renombrar `initial_reports` → `neurodevelopment_roadmaps` + `patient_id` + índice + nueva restricción única.
-2. Regeneración de `types.ts` (automática al aprobar la migración).
-3. Server functions nuevas (`patients.functions.ts`) y ajuste de `assessment.functions.ts`.
-4. Rutas de UI: `pacientes` (lista + ficha + alta), ajuste de onboarding, evaluación e informe.
-5. Ajuste de tools MCP y de `brand-copy.ts`.
-6. Verificación end-to-end: crear paciente → iniciar evaluación → completar → ver Hoja de Ruta.
+## 5. Regla de "usuarios que regresan"
 
-## Preguntas abiertas (confirmar antes de implementar)
+Se cumple automáticamente por el despachador `/app`:
+- Evaluación en progreso → cae en la fila 4 de la tabla → abre `/app/evaluacion?patient=<id>` (la ruta actual ya reanuda desde la última pregunta guardada porque `getAssessmentState` restaura las respuestas).
+- Evaluación completada → cae en la fila 5 → dashboard.
+- Onboarding ya visto → nunca vuelve a la pantalla `/onboarding` (el flag `onboarding_completed` lo evita, incluso si en el futuro se completa una segunda evaluación).
 
-- **Multi-paciente ya en Fase 2**: habilitamos desde ya que un acudiente registre varios pacientes.
-  &nbsp;
+## 6. Validaciones (checklist del brief)
+
+- Landing → Registro/Login: ya conectado.
+- Consentimiento solo cuando `!hasConsent`.
+- Paciente asociado a `auth.uid()`: garantizado por `createPatient` + RLS `patients_self_all`.
+- Onboarding solo primera vez: `onboarding_completed` cambia a `true` en `startEvaluationFromOnboarding`.
+- Assessment se crea al presionar "Comenzar evaluación" vía `getAssessmentState` (find-or-create, estado `in_progress`).
+- Abandono/regreso: despachador retoma exactamente en `/app/evaluacion?patient=<id>` con las respuestas ya guardadas.
+- Ya completó → dashboard.
+
+## 7. Fuera de alcance (no se toca)
+
+- Diseño visual de landing, auth, onboarding, dashboard, formulario de paciente.
+- Motor clínico, informe, Moholka, pagos.
+- Multi-evaluación histórica (el constraint `UNIQUE(user_id)` sigue en `assessments`; Módulo 0 no lo necesita).
+- Políticas RLS para rol administradora (queda para el módulo de CRM).
+
+## 8. Orden de ejecución
+
+1. Migración `profiles.onboarding_completed`.
+2. `src/lib/onboarding.functions.ts` con las dos server fns.
+3. Reescritura del contenido de `app.index.tsx` como despachador (mantiene el dashboard como fallback).
+4. Nueva ruta `_authenticated/consentimiento.tsx` que envuelve `HabeasDataGate` como página.
+5. `app.pacientes.tsx`: `validateSearch` + auto-abrir formulario + redirección post-guardado a `/onboarding`.
+6. `onboarding.tsx`: nuevo copy, search param `patient`, botón llama a `startEvaluationFromOnboarding` y navega a evaluación.
+7. `auth.tsx`: registro también redirige a `/app`, `emailRedirectTo` → `/app`.
+8. Verificación end-to-end en la preview: usuario nuevo (consent → paciente → onboarding → evaluación) y usuario que vuelve (retoma o dashboard).
