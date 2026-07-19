@@ -3,6 +3,9 @@ import { useState, type ReactNode } from "react";
 import { Mail, Lock, User, Eye, EyeOff, Users, Stethoscope } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -45,7 +48,7 @@ function AuthPage() {
 
         <div className="rounded-3xl bg-card p-2 shadow-sm ring-1 ring-border/50">
           {tab === "login" ? (
-            <LoginForm onSuccess={() => navigate({ to: "/onboarding" })} />
+            <LoginForm onSuccess={() => navigate({ to: "/app" })} />
           ) : (
             <RegisterForm onSuccess={() => navigate({ to: "/onboarding" })} />
           )}
@@ -132,12 +135,16 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        // Mock — la autenticación real llegará con Lovable Cloud.
+        setLoading(true);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        setLoading(false);
+        if (error) return toast.error(error.message);
         onSuccess();
       }}
       className="flex flex-col gap-3 p-4"
@@ -186,9 +193,10 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 
       <button
         type="submit"
+        disabled={loading}
         className="mt-2 rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
       >
-        Ingresar
+        {loading ? "Ingresando..." : "Ingresar"}
       </button>
 
       <SocialDivider />
@@ -203,11 +211,24 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<Role>("usuario");
+  const [loading, setLoading] = useState(false);
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
+        setLoading(true);
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin + "/app",
+            data: { full_name: name, role },
+          },
+        });
+        setLoading(false);
+        if (error) return toast.error(error.message);
+        toast.success("Cuenta creada. Revisa tu correo para confirmar.");
         onSuccess();
       }}
       className="flex flex-col gap-3 p-4"
@@ -270,9 +291,10 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
 
       <button
         type="submit"
+        disabled={loading}
         className="mt-3 rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
       >
-        Crear cuenta
+        {loading ? "Creando..." : "Crear cuenta"}
       </button>
 
       <SocialDivider />
@@ -335,6 +357,12 @@ function GoogleButton() {
   return (
     <button
       type="button"
+      onClick={async () => {
+        const result = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin + "/app",
+        });
+        if (result.error) toast.error(result.error.message ?? "No se pudo iniciar sesión con Google");
+      }}
       className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-background py-3 text-sm font-medium text-foreground transition hover:bg-muted"
     >
       <GoogleIcon />
