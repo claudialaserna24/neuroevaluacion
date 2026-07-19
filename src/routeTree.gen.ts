@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
+import { Route as AuthenticatedAppInformeRouteImport } from './routes/_authenticated/app.informe'
 import { Route as AuthenticatedAppEvaluacionRouteImport } from './routes/_authenticated/app.evaluacion'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -52,6 +53,11 @@ const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppInformeRoute = AuthenticatedAppInformeRouteImport.update({
+  id: '/informe',
+  path: '/informe',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppEvaluacionRoute =
   AuthenticatedAppEvaluacionRouteImport.update({
     id: '/evaluacion',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
+  '/app/informe': typeof AuthenticatedAppInformeRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
+  '/app/informe': typeof AuthenticatedAppInformeRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
+  '/_authenticated/app/informe': typeof AuthenticatedAppInformeRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -95,10 +104,18 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/app'
     | '/app/evaluacion'
+    | '/app/informe'
     | '/app/perfil'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/onboarding' | '/app/evaluacion' | '/app/perfil' | '/app'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/app/evaluacion'
+    | '/app/informe'
+    | '/app/perfil'
+    | '/app'
   id:
     | '__root__'
     | '/'
@@ -107,6 +124,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/_authenticated/app'
     | '/_authenticated/app/evaluacion'
+    | '/_authenticated/app/informe'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
@@ -169,6 +187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPerfilRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/informe': {
+      id: '/_authenticated/app/informe'
+      path: '/informe'
+      fullPath: '/app/informe'
+      preLoaderRoute: typeof AuthenticatedAppInformeRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/evaluacion': {
       id: '/_authenticated/app/evaluacion'
       path: '/evaluacion'
@@ -181,12 +206,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppEvaluacionRoute: typeof AuthenticatedAppEvaluacionRoute
+  AuthenticatedAppInformeRoute: typeof AuthenticatedAppInformeRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppEvaluacionRoute: AuthenticatedAppEvaluacionRoute,
+  AuthenticatedAppInformeRoute: AuthenticatedAppInformeRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
