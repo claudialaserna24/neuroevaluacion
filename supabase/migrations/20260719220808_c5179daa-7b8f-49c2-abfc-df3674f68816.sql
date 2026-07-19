@@ -1,0 +1,1 @@
+ALTER TABLE public.assessment_questions ADD COLUMN IF NOT EXISTS description text;
