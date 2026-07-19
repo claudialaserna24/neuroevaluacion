@@ -37,24 +37,40 @@ function PacientesPage() {
   return (
     <div className="flex flex-col gap-6">
       <header className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-border/50">
-        <p className="text-xs font-medium uppercase tracking-wide text-primary">
-          Pacientes
-        </p>
-        <h1 className="mt-1 font-serif text-2xl leading-tight text-foreground">
-          Mis pacientes
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Cada paciente tiene su propia evaluación y Hoja de Ruta para el
-          Neurodesarrollo.
-        </p>
-        {!showForm && (
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" /> Añadir paciente
-          </button>
+        {first === "1" ? (
+          <>
+            <h1 className="font-serif text-2xl leading-tight text-foreground">
+              Cuéntanos sobre tu hijo...
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Para comenzar la evaluación necesitamos conocer algunos datos
+              básicos de tu hijo. Esta información nos permitirá personalizar
+              todo el proceso y generar posteriormente su Hoja de Ruta para el
+              Neurodesarrollo.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-xs font-medium uppercase tracking-wide text-primary">
+              Pacientes
+            </p>
+            <h1 className="mt-1 font-serif text-2xl leading-tight text-foreground">
+              Mis pacientes
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Cada paciente tiene su propia evaluación y Hoja de Ruta para el
+              Neurodesarrollo.
+            </p>
+            {!showForm && (
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              >
+                <Plus className="h-4 w-4" /> Añadir paciente
+              </button>
+            )}
+          </>
         )}
       </header>
 
@@ -166,7 +182,9 @@ function NewPatientForm({
       onSubmit={handleSubmit}
       className="flex flex-col gap-4 rounded-3xl bg-card p-6 shadow-sm ring-1 ring-border/50"
     >
-      <h2 className="font-serif text-lg text-foreground">Nuevo paciente</h2>
+      <h2 className="font-serif text-lg text-foreground">
+        Información de tu hijo (a)
+      </h2>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Nombres *" name="first_name" required />
@@ -218,9 +236,10 @@ function NewPatientForm({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
         >
-          {saving ? "Guardando…" : "Guardar paciente"}
+          {saving ? "Continuando…" : "Continuar con la evaluación"}
+          {!saving && <ArrowRight className="h-4 w-4" />}
         </button>
       </div>
     </form>
