@@ -153,6 +153,19 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
   const options = SCALE_OPTIONS[currentQ.scale];
   const selectedValue = answers.get(currentQ.id);
 
+  const renderQuestionText = (text: string) => {
+    const idx = text.indexOf(": ");
+    if (idx > 0 && idx < 120) {
+      return (
+        <>
+          <strong className="font-semibold">{text.slice(0, idx)}:</strong>{" "}
+          <span className="font-normal">{text.slice(idx + 2)}</span>
+        </>
+      );
+    }
+    return text;
+  };
+
   return (
     <div className="flex flex-col gap-5">
       {/* Header progreso */}
