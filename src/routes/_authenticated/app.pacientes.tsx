@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -17,16 +18,19 @@ export const Route = createFileRoute("/_authenticated/app/pacientes")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) =>
+    z.object({ first: z.literal("1").optional() }).parse(s),
   component: PacientesPage,
 });
 
 function PacientesPage() {
+  const { first } = Route.useSearch();
   const fetchPatients = useServerFn(listMyPatients);
   const patients = useQuery({
     queryKey: ["my-patients"],
     queryFn: () => fetchPatients(),
   });
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(first === "1");
 
   const list = patients.data ?? [];
 
@@ -54,7 +58,12 @@ function PacientesPage() {
         )}
       </header>
 
-      {showForm && <NewPatientForm onDone={() => setShowForm(false)} />}
+      {showForm && (
+        <NewPatientForm
+          onDone={() => setShowForm(false)}
+          onboarding={first === "1"}
+        />
+      )}
 
       {list.length === 0 && !showForm ? (
         <div className="rounded-2xl bg-muted/40 p-5 text-center text-sm text-muted-foreground">
@@ -89,7 +98,13 @@ function PacientesPage() {
   );
 }
 
-function NewPatientForm({ onDone }: { onDone: () => void }) {
+function NewPatientForm({
+  onDone,
+  onboarding,
+}: {
+  onDone: () => void;
+  onboarding?: boolean;
+}) {
   const navigate = useNavigate();
   const create = useServerFn(createPatient);
   const [saving, setSaving] = useState(false);
@@ -128,10 +143,14 @@ function NewPatientForm({ onDone }: { onDone: () => void }) {
       toast.success("Paciente registrado");
       onDone();
       if (row?.id) {
-        navigate({
-          to: "/app/pacientes/$patientId",
-          params: { patientId: row.id },
-        });
+        if (onboarding) {
+          navigate({ to: "/onboarding", search: { patient: row.id } });
+        } else {
+          navigate({
+            to: "/app/pacientes/$patientId",
+            params: { patientId: row.id },
+          });
+        }
       }
     } catch (err) {
       toast.error(
