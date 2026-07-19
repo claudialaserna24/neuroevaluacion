@@ -56,6 +56,7 @@ export type Database = {
       assessment_questions: {
         Row: {
           category: string | null
+          description: string | null
           dimension: string
           id: string
           module: Database["public"]["Enums"]["assessment_module"]
@@ -65,6 +66,7 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          description?: string | null
           dimension: string
           id?: string
           module: Database["public"]["Enums"]["assessment_module"]
@@ -74,6 +76,7 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          description?: string | null
           dimension?: string
           id?: string
           module?: Database["public"]["Enums"]["assessment_module"]
