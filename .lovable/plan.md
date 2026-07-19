@@ -1,115 +1,32 @@
+## Diagnóstico
 
-# Módulo 0 — Flujo de incorporación del padre (solo lógica)
+Revisé los logs de auth y las peticiones de red. Lo que está pasando:
 
-Objetivo: encadenar Landing → Auth → Consentimiento → Paciente → Onboarding → Evaluación de forma automática, sin rediseñar pantallas y sin IA. Se añade un único punto de decisión servidor + un despachador cliente que redirige al paso correcto.
+1. **"Crear cuenta" no hace nada visible** → el servidor sí responde, pero con `422 weak_password` ("Password is known to be weak and easy to guess"). La contraseña `123456` fue rechazada por la protección **HIBP (Have I Been Pwned)** que está activada. El `toast.error` se dispara, pero probablemente no se ve por un problema de hidratación SSR en `/auth` (hay un error de *Hydration failed* registrado que regenera el árbol y puede tragarse el toast).
+2. **Login "Invalid credentials"** → como el registro nunca completó, el usuario no existe. Además, aunque se registrara, hoy el email requiere confirmación, así que el login inmediato fallaría de todas formas hasta que confirme el correo.
+3. **Google se queda "pensando"** → el proveedor Google no está habilitado en el backend. El popup abre pero nunca recibe tokens.
 
-## 1. Backend
+## Plan de corrección
 
-Migración (una sola):
+### 1. Backend — Auth settings
+- `auto_confirm_email: true` (dev): permite login inmediato tras registro sin depender del correo.
+- `password_hibp_enabled: false`: quitar el chequeo HIBP mientras se prueba el flujo (seguimos exigiendo mínimo 6 caracteres desde Supabase).
+- Habilitar proveedor **Google** vía `configure_social_auth(["google"])` (usa credenciales gestionadas por Lovable Cloud, sin setup manual).
 
-```sql
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS onboarding_completed boolean NOT NULL DEFAULT false;
-```
+### 2. Frontend — `/auth`
+- **Arreglar hidratación**: el error viene de `AuthPage` renderizando distinto en SSR vs cliente por el `useState<Tab>("login")` combinado con lectura de `Route.useSearch()`. Marcar la ruta como `ssr: false` (es una página puramente interactiva; no necesita SSR).
+- **Registro (`RegisterForm`)**:
+  - Mostrar el error real del servidor de forma prominente (además del toast, un banner inline dentro del formulario) para que el usuario vea "contraseña débil", "email ya registrado", etc.
+  - Al éxito con `auto_confirm_email` activo: la sesión queda creada automáticamente; navegar a `/app` (el despachador ya redirige al siguiente paso: consentimiento → paciente → onboarding → evaluación).
+  - Si no hay sesión (caso confirmación por correo), mostrar mensaje "Cuenta creada, revisa tu correo" y **no** navegar.
+  - Validación mínima en cliente: contraseña ≥ 6 caracteres, email válido, nombre no vacío — con mensajes inline antes de golpear el servidor.
+- **Login (`LoginForm`)**: banner de error inline con traducción amigable de `invalid_credentials` → "Correo o contraseña incorrectos".
+- **Google (`GoogleButton`)**: envolver la llamada en try/catch, mostrar toast y banner si `result.error`, y verificar que `redirect_uri` sea `window.location.origin` (mantener) — el problema principal se resuelve al habilitar el proveedor en el backend.
 
-No se crean tablas nuevas. `handle_new_user` ya inserta el `profiles` en el signup, así que el flag arranca en `false` por default.
+### 3. Verificación
+Con Playwright headless: registrar un usuario nuevo con contraseña fuerte, confirmar que se navega a `/app` → dispatcher → `/consentimiento`. Luego cerrar sesión, hacer login con las mismas credenciales, confirmar que llega al dashboard/estado correspondiente. Capturas en cada paso.
 
-## 2. Server function única: `getOnboardingState`
-
-Nuevo archivo `src/lib/onboarding.functions.ts`, con `requireSupabaseAuth`. Devuelve un DTO plano que el cliente usa para decidir la siguiente ruta:
-
-```ts
-{
-  hasConsent: boolean,          // user_consents WHERE policy_kind='habeas_data'
-  activePatientId: string | null, // último patients.created_at DESC
-  onboardingCompleted: boolean, // profiles.onboarding_completed
-  activeAssessmentId: string | null,   // assessments WHERE status='in_progress' del paciente activo
-  hasCompletedAssessment: boolean,     // assessments WHERE status='completed' del paciente activo
-}
-```
-
-Segunda server fn `startEvaluationFromOnboarding({ patientId })`:
-1. `UPDATE profiles SET onboarding_completed=true WHERE id=auth.uid()`.
-2. Reutiliza la lógica actual de `getAssessmentState({ patientId })` para asegurar una evaluación `in_progress` (find-or-create).
-3. Devuelve `{ assessmentId }`.
-
-Todo pasa por RLS existente (`profiles_self_all`, `assessments_self_all`, `patients_self_all`, `consents_self_read`). No se tocan políticas.
-
-## 3. Punto de decisión en el cliente
-
-Se centraliza en `/app` (ya es la ruta raíz autenticada). Se convierte `src/routes/_authenticated/app.index.tsx` en despachador:
-
-- Al montar, llama `getOnboardingState` (loader + `useSuspenseQuery`, patrón estándar del template).
-- Redirige con `navigate({ replace: true })` según esta tabla — el usuario nunca elige el paso:
-
-| Estado | Redirige a |
-|---|---|
-| `!hasConsent` | `/consentimiento` |
-| `hasConsent && !activePatientId` | `/app/pacientes?first=1` (abre el formulario automáticamente) |
-| paciente OK, `!onboardingCompleted` | `/onboarding?patient=<id>` |
-| onboarding OK, `activeAssessmentId` presente | `/app/evaluacion?patient=<id>` (retoma) |
-| onboarding OK, evaluación `completed` | permanece en `/app` → renderiza el **Dashboard actual** (lista de pacientes / resumen) |
-
-Único caso que **renderiza contenido** en `/app`: el dashboard del usuario recurrente que ya terminó. El resto son redirecciones inmediatas → nunca se ve "flash" del dashboard.
-
-## 4. Ajustes de rutas existentes (sin rediseñar UI)
-
-### `src/routes/auth.tsx`
-- Login `onSuccess` → `navigate({ to: "/app" })` (hoy ya).
-- Register `onSuccess` → **también** `navigate({ to: "/app" })` en vez de `/onboarding`. El despachador se encarga de mandarlo a consent → paciente → onboarding.
-- `emailRedirectTo` pasa a `${origin}/app`.
-
-### `src/routes/onboarding.tsx`
-- Acepta search param `patient` (uuid).
-- Copy actualizado (según brief):
-  - Menciona los 3 módulos: Perfil Cognitivo, Evaluación Funcional, Patrones Asociados a Reflejos Primitivos.
-  - Menciona pausa/autoguardado y "al finalizar recibirás una Hoja de Ruta para el Neurodesarrollo".
-  - Se elimina toda mención a diagnósticos.
-- Botón único **"Comenzar evaluación"**: llama `startEvaluationFromOnboarding({ patientId })` y luego `navigate({ to: "/app/evaluacion", search: { patient: patientId } })`.
-- Si llega sin `patient` en la URL, el propio despachador lo habrá mandado antes al paso correcto; como salvaguarda extra, la página también llama a `getOnboardingState` y se auto-corrige.
-
-### Nueva ruta pública/gated `src/routes/_authenticated/consentimiento.tsx`
-- Reutiliza el componente `HabeasDataGate` que ya existe. Se monta como página completa (no como overlay) para que el flujo sea el "paso" que describes.
-- Al aceptar (`acceptHabeasData` ya existe) → `navigate({ to: "/app", replace: true })`.
-- La versión modal del `HabeasDataGate` sigue disponible por si se necesita en otro lugar, pero en este módulo se usa como página.
-
-### `src/routes/_authenticated/app.pacientes.tsx`
-- Añade `validateSearch` con `first?: "1"`. Si `first === "1"` y no hay pacientes:
-  - Abre el formulario `NewPatientForm` automáticamente (equivalente a `showForm=true` inicial).
-  - Al guardar exitosamente, en lugar de navegar al detalle del paciente, `navigate({ to: "/onboarding", search: { patient: row.id } })`.
-- Comportamiento normal (sin `first=1`) se mantiene: alta manual desde el CRUD que sigue igual.
-
-## 5. Regla de "usuarios que regresan"
-
-Se cumple automáticamente por el despachador `/app`:
-- Evaluación en progreso → cae en la fila 4 de la tabla → abre `/app/evaluacion?patient=<id>` (la ruta actual ya reanuda desde la última pregunta guardada porque `getAssessmentState` restaura las respuestas).
-- Evaluación completada → cae en la fila 5 → dashboard.
-- Onboarding ya visto → nunca vuelve a la pantalla `/onboarding` (el flag `onboarding_completed` lo evita, incluso si en el futuro se completa una segunda evaluación).
-
-## 6. Validaciones (checklist del brief)
-
-- Landing → Registro/Login: ya conectado.
-- Consentimiento solo cuando `!hasConsent`.
-- Paciente asociado a `auth.uid()`: garantizado por `createPatient` + RLS `patients_self_all`.
-- Onboarding solo primera vez: `onboarding_completed` cambia a `true` en `startEvaluationFromOnboarding`.
-- Assessment se crea al presionar "Comenzar evaluación" vía `getAssessmentState` (find-or-create, estado `in_progress`).
-- Abandono/regreso: despachador retoma exactamente en `/app/evaluacion?patient=<id>` con las respuestas ya guardadas.
-- Ya completó → dashboard.
-
-## 7. Fuera de alcance (no se toca)
-
-- Diseño visual de landing, auth, onboarding, dashboard, formulario de paciente.
-- Motor clínico, informe, Moholka, pagos.
-- Multi-evaluación histórica (el constraint `UNIQUE(user_id)` sigue en `assessments`; Módulo 0 no lo necesita).
-- Políticas RLS para rol administradora (queda para el módulo de CRM).
-
-## 8. Orden de ejecución
-
-1. Migración `profiles.onboarding_completed`.
-2. `src/lib/onboarding.functions.ts` con las dos server fns.
-3. Reescritura del contenido de `app.index.tsx` como despachador (mantiene el dashboard como fallback).
-4. Nueva ruta `_authenticated/consentimiento.tsx` que envuelve `HabeasDataGate` como página.
-5. `app.pacientes.tsx`: `validateSearch` + auto-abrir formulario + redirección post-guardado a `/onboarding`.
-6. `onboarding.tsx`: nuevo copy, search param `patient`, botón llama a `startEvaluationFromOnboarding` y navega a evaluación.
-7. `auth.tsx`: registro también redirige a `/app`, `emailRedirectTo` → `/app`.
-8. Verificación end-to-end en la preview: usuario nuevo (consent → paciente → onboarding → evaluación) y usuario que vuelve (retoma o dashboard).
+### Detalles técnicos
+- Archivos a editar: `src/routes/auth.tsx` (ssr:false + banners + validación + manejo de sesión post-signUp).
+- Tools backend: `supabase--configure_auth` y `supabase--configure_social_auth`.
+- No se toca lógica de negocio ni el despachador `/app`.

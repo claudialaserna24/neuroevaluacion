@@ -8,6 +8,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Ingresar — NEUROPLAN" },
@@ -151,19 +152,34 @@ function LoginForm({ onSuccess, next }: { onSuccess: () => void; next?: string }
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
+        setErrorMsg(null);
         setLoading(true);
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         setLoading(false);
-        if (error) return toast.error(error.message);
+        if (error) {
+          const msg =
+            error.message.toLowerCase().includes("invalid")
+              ? "Correo o contraseña incorrectos."
+              : error.message;
+          setErrorMsg(msg);
+          toast.error(msg);
+          return;
+        }
         onSuccess();
       }}
       className="flex flex-col gap-3 p-4"
     >
+      {errorMsg && (
+        <div className="rounded-xl bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+          {errorMsg}
+        </div>
+      )}
       <FloatingField
         icon={Mail}
         label="Correo electrónico"
@@ -227,13 +243,29 @@ function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: strin
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<Role>("usuario");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
+        setErrorMsg(null);
+        setInfoMsg(null);
+        if (!name.trim()) {
+          setErrorMsg("Ingresa tu nombre completo.");
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          setErrorMsg("Ingresa un correo electrónico válido.");
+          return;
+        }
+        if (password.length < 6) {
+          setErrorMsg("La contraseña debe tener al menos 6 caracteres.");
+          return;
+        }
         setLoading(true);
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -243,12 +275,37 @@ function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: strin
           },
         });
         setLoading(false);
-        if (error) return toast.error(error.message);
-        toast.success("Cuenta creada. Revisa tu correo para confirmar.");
-        onSuccess();
+        if (error) {
+          let msg = error.message;
+          if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("registered")) {
+            msg = "Este correo ya está registrado. Ingresa con tu contraseña.";
+          } else if (msg.toLowerCase().includes("weak") || msg.toLowerCase().includes("pwned")) {
+            msg = "La contraseña es demasiado débil. Prueba una más segura.";
+          }
+          setErrorMsg(msg);
+          toast.error(msg);
+          return;
+        }
+        if (data.session) {
+          toast.success("¡Cuenta creada! Bienvenido/a.");
+          onSuccess();
+        } else {
+          setInfoMsg("Cuenta creada. Revisa tu correo para confirmar antes de ingresar.");
+          toast.success("Revisa tu correo para confirmar tu cuenta.");
+        }
       }}
       className="flex flex-col gap-3 p-4"
     >
+      {errorMsg && (
+        <div className="rounded-xl bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+          {errorMsg}
+        </div>
+      )}
+      {infoMsg && (
+        <div className="rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+          {infoMsg}
+        </div>
+      )}
       <FloatingField
         icon={User}
         label="Nombre completo"
