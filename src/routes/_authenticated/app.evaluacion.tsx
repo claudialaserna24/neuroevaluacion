@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronLeft } from "lucide-react";
@@ -14,6 +15,8 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/evaluacion")({
   head: () => ({ meta: [{ title: "Evaluación — NEUROPLAN" }, { name: "robots", content: "noindex" }] }),
+  validateSearch: (s: Record<string, unknown>) =>
+    z.object({ patient: z.string().uuid() }).parse(s),
   component: EvaluacionPage,
 });
 
@@ -50,14 +53,15 @@ const SCALE_OPTIONS: Record<Question["scale"], { value: number; label: string }[
 };
 
 function EvaluacionPage() {
+  const { patient } = Route.useSearch();
   return (
     <HabeasDataGate>
-      <EvaluacionRunner />
+      <EvaluacionRunner patientId={patient} />
     </HabeasDataGate>
   );
 }
 
-function EvaluacionRunner() {
+function EvaluacionRunner({ patientId }: { patientId: string }) {
   const navigate = useNavigate();
   const fetchState = useServerFn(getAssessmentState);
   const submit = useServerFn(saveAnswer);
@@ -78,7 +82,7 @@ function EvaluacionRunner() {
         .select("id, module, dimension, category, order_index, title, scale")
         .order("module")
         .order("order_index");
-      const state = await fetchState();
+      const state = await fetchState({ data: { patientId } });
       setQuestions((qs ?? []) as unknown as Question[]);
       setAssessmentId(state.assessment.id);
       const map = new Map<string, number>();
@@ -88,7 +92,7 @@ function EvaluacionRunner() {
       const orderIndex = (qs ?? []).findIndex((q) => !map.has(q.id));
       setCursor(orderIndex === -1 ? (qs?.length ?? 1) - 1 : orderIndex);
     })();
-  }, [fetchState]);
+    }, [fetchState, patientId]);
 
   const total = questions.length;
   const currentQ = questions[cursor];
@@ -128,7 +132,7 @@ function EvaluacionRunner() {
     try {
       await complete({ data: { assessmentId } });
       toast.success("¡Evaluación completada!");
-      navigate({ to: "/app/informe" });
+      navigate({ to: "/app/informe", search: { patient: patientId } });
     } catch {
       toast.error("No se pudo generar tu Hoja de Ruta. Intenta de nuevo.");
     } finally {
