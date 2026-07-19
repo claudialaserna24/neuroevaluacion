@@ -23,8 +23,10 @@ export default defineTool({
 
     const { data: assessment, error: aErr } = await supabase
       .from("assessments")
-      .select("id, status, created_at, completed_at, current_question_id")
+      .select("id, status, created_at, completed_at, current_question_id, patient_id")
       .eq("user_id", ctx.getUserId())
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (aErr) return { content: [{ type: "text", text: aErr.message }], isError: true };
 
