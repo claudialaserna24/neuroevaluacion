@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, FileText, Sparkles } from "lucide-react";
+import { ArrowRight, FileText, Sparkles, Bot } from "lucide-react";
 import { getPatient, computeAgeYears } from "@/lib/patients.functions";
 import { getRoadmap } from "@/lib/assessment.functions";
 
@@ -39,6 +39,8 @@ function PatientDetail() {
   }
 
   const hasRoadmap = !!roadmap.data;
+  const planUnlocked =
+    (roadmap.data as { plan_status?: string } | null)?.plan_status === "unlocked";
 
   return (
     <div className="flex flex-col gap-5">
@@ -89,6 +91,24 @@ function PatientDetail() {
           )}
         </Link>
       </section>
+
+      {planUnlocked && (
+        <Link
+          to="/app/plan/$patientId"
+          params={{ patientId: p.id }}
+          className="flex items-center justify-between rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 shadow-sm ring-1 ring-primary/30 hover:ring-primary/50"
+        >
+          <div>
+            <p className="text-xs uppercase tracking-wide text-primary">
+              Plan Interactivo NEUROPLAN
+            </p>
+            <p className="font-serif text-lg text-foreground">
+              Abrir Plan Interactivo
+            </p>
+          </div>
+          <Bot className="h-5 w-5 text-primary" />
+        </Link>
+      )}
 
       <section className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border/50">
         <h2 className="font-serif text-lg text-foreground">Datos clínicos</h2>
