@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Sparkles,
   FileText,
@@ -11,11 +11,14 @@ import {
   Download,
   Loader2,
   Lock,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import {
   getInteractivePlan,
   getManualDownloadUrl,
   getPlanPdfDownloadUrl,
+  startPlanGeneration,
 } from "@/lib/plan/plan.functions";
 import { MoholkaFloatingButton } from "@/components/plan/MoholkaFloatingButton";
 import { MoholkaPanel } from "@/components/plan/MoholkaPanel";
@@ -33,9 +36,11 @@ export const Route = createFileRoute("/_authenticated/app/plan/$patientId")({
 function PlanInteractivoDashboard() {
   const { patientId } = Route.useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const fetchPlan = useServerFn(getInteractivePlan);
   const fetchManual = useServerFn(getManualDownloadUrl);
   const fetchPdf = useServerFn(getPlanPdfDownloadUrl);
+  const startGeneration = useServerFn(startPlanGeneration);
 
   const plan = useQuery({
     queryKey: ["interactive-plan", patientId],
@@ -43,12 +48,25 @@ function PlanInteractivoDashboard() {
     refetchInterval: (q) => {
       const d = q.state.data;
       if (!d || d.blocked) return false;
-      return d.roadmap.plan_generation_status === "ready" ? false : 10_000;
+      const s = d.roadmap.plan_generation_status;
+      // Polling activo mientras la generación esté en curso; se detiene
+      // en estados terminales (ready o failed).
+      if (s === "ready" || s === "failed") return false;
+      return 5_000;
     },
   });
 
   const [moholkaOpen, setMoholkaOpen] = useState(false);
   const [downloading, setDownloading] = useState<"pdf" | "manual" | null>(null);
+  const autoTriggeredRef = useRef(false);
+
+  const triggerMutation = useMutation({
+    mutationFn: (opts: { force?: boolean }) =>
+      startGeneration({ data: { patientId, force: opts.force } }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["interactive-plan", patientId] });
+    },
+  });
 
   useEffect(() => {
     if (plan.data && plan.data.blocked) {
@@ -60,6 +78,26 @@ function PlanInteractivoDashboard() {
       });
     }
   }, [plan.data, navigate, patientId]);
+
+  // Disparo automático: al cargar la pantalla, si el plan está pendiente,
+  // failed, o llevaba demasiado tiempo en "generating", lanzamos la Skill.
+  // Un useRef evita re-disparos ante re-renders o refetches del polling.
+  useEffect(() => {
+    if (autoTriggeredRef.current) return;
+    if (!plan.data || plan.data.blocked) return;
+    const rm = plan.data.roadmap;
+    const s = rm.plan_generation_status;
+    const stale =
+      s === "generating" &&
+      (!rm.plan_generation_status_updated_at ||
+        Date.now() -
+          new Date(rm.plan_generation_status_updated_at).getTime() >=
+          3 * 60 * 1000);
+    if (s === "pending" || s === "failed" || stale) {
+      autoTriggeredRef.current = true;
+      triggerMutation.mutate({ force: s === "failed" || stale });
+    }
+  }, [plan.data, triggerMutation]);
 
   if (plan.isLoading || !plan.data) {
     return (
@@ -78,6 +116,7 @@ function PlanInteractivoDashboard() {
 
   const { patient, roadmap, manual_available } = plan.data;
   const ready = roadmap.plan_generation_status === "ready";
+  const failed = roadmap.plan_generation_status === "failed";
   const activatedAt = roadmap.plan_activated_at
     ? new Date(roadmap.plan_activated_at)
     : null;
@@ -116,10 +155,16 @@ function PlanInteractivoDashboard() {
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
               ready
                 ? "bg-primary/15 text-primary"
+                : failed
+                ? "bg-destructive/10 text-destructive"
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            {ready ? "Plan Activo" : "Preparando tu Plan"}
+            {ready
+              ? "Plan Activo"
+              : failed
+              ? "Generación no completada"
+              : "Preparando tu Plan"}
           </span>
           {activatedAt && (
             <span className="text-xs text-muted-foreground">
@@ -134,7 +179,7 @@ function PlanInteractivoDashboard() {
         </div>
       </header>
 
-      {!ready && (
+      {!ready && !failed && (
         <section className="rounded-3xl bg-card p-6 text-center shadow-sm ring-1 ring-border/50">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
           <h2 className="mt-4 font-serif text-2xl text-foreground">
@@ -143,6 +188,32 @@ function PlanInteractivoDashboard() {
           <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
             Estamos organizando toda la información de la evaluación para construir un programa completamente personalizado para tu hijo. Este proceso se realizará automáticamente en el siguiente paso.
           </p>
+        </section>
+      )}
+
+      {failed && (
+        <section className="rounded-3xl bg-card p-6 text-center shadow-sm ring-1 ring-destructive/30">
+          <AlertCircle className="mx-auto h-8 w-8 text-destructive" />
+          <h2 className="mt-4 font-serif text-2xl text-foreground">
+            No pudimos terminar de preparar tu plan.
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+            Tu pago está seguro y puedes intentar nuevamente.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              autoTriggeredRef.current = true;
+              triggerMutation.mutate({ force: true });
+            }}
+            disabled={triggerMutation.isPending}
+            className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${triggerMutation.isPending ? "animate-spin" : ""}`}
+            />
+            {triggerMutation.isPending ? "Reintentando…" : "Reintentar generación"}
+          </button>
         </section>
       )}
 
