@@ -1,77 +1,73 @@
-## CEREBRO — Base de conocimiento clínico
+## CEREBRO — Importación CSV + UI de administrador
 
-Crear la arquitectura para importar y consultar reglas de intervención neurofuncional desde CSV. No incluye generación de Plan ni IA.
+El CSV tiene 132 filas y las 5 columnas esperadas (`modulo`, `subcategoria`, `nivel_severidad`, `condicion_conductual`, `plan_accion_texto`). Mapeo 1:1 a `knowledge_documents`. Todas las columnas reconocidas, no hay campos sin correspondencia.
 
-### 1. Tabla `knowledge_documents`
+### 1. Importación inicial (one-shot)
 
-Migración con la siguiente estructura:
+Insertar las 132 filas vía el tool de inserción de datos, en un solo `INSERT` con `VALUES (...)` por fila. Mapeo:
 
-- `id` UUID PK
-- `module` TEXT NOT NULL (Reflejos, Perfil Cognitivo, Evaluación Funcional)
-- `subcategory` TEXT (Moro, Vestibular, Táctil, Auditiva, …)
-- `severity_level` TEXT (libre, definido por CSV)
-- `behavioral_condition` TEXT
-- `intervention_text` TEXT NOT NULL (contenido íntegro, sin transformar)
-- `image_url` TEXT NULL
-- `active` BOOLEAN NOT NULL DEFAULT true
-- `version` TEXT NOT NULL DEFAULT 'v1'
-- `created_at`, `updated_at` con trigger `touch_updated_at`
+- `modulo` → `module`
+- `subcategoria` → `subcategory`
+- `nivel_severidad` → `severity_level`
+- `condicion_conductual` → `behavioral_condition`
+- `plan_accion_texto` → `intervention_text`
+- `active = true`, `version = 'v1'`, `image_url = NULL`
+- `created_at` / `updated_at` por default de la tabla
 
-Índices para consultas filtradas de la Skill:
-- `(module, subcategory, severity_level)`
-- `(module, behavioral_condition)`
-- `(active)`
+Sin resúmenes, sin transformaciones. Texto íntegro. Prevención de duplicados en re-ejecución: `ON CONFLICT DO NOTHING` sobre un índice único parcial nuevo `(module, subcategory, severity_level, behavioral_condition) WHERE active`.
 
-### 2. GRANTs + RLS
+Distribución esperada:
+- Reflejos: 37
+- Áreas Funcionales: 32
+- Actividades de intervención: 21
+- Recomendaciones para familias: 17
+- Preguntas frecuentes: 10
+- Protocolos de aplicación: 8
+- Perfil de Dominancia: 7
 
-- GRANT SELECT, INSERT, UPDATE, DELETE al `service_role` (ALL) y `authenticated` (necesario para que la Skill/MCP consulte con el token del usuario).
-- RLS habilitado.
-- Políticas:
-  - **SELECT** para `authenticated` cuando `active = true` — permite que la Skill consulte reglas activas durante la generación del Plan (autorizada al usuario autenticado; no expone edición).
-  - **INSERT / UPDATE / DELETE** sólo cuando `public.has_role(auth.uid(), 'administrador')`.
-- Sin acceso `anon`.
+### 2. Migración de soporte
 
-### 3. Storage: bucket `cerebro-assets`
+Añadir índice único parcial mencionado arriba, para permitir re-imports idempotentes desde la UI:
 
-- Bucket privado (`public=false`) creado con `supabase--storage_create_bucket`.
-- Políticas RLS sobre `storage.objects`:
-  - SELECT permitido a `authenticated` (Skill y consultas del Plan).
-  - INSERT/UPDATE/DELETE sólo a administradores vía `has_role`.
-- `image_url` almacenará la URL (firmada o pública según necesidad futura) generada al subir el archivo. En esta fase basta con el campo listo.
-
-### 4. Importación CSV
-
-En esta fase no se construye UI de importación completa; se deja el esquema listo para que Lovable/administrador importe filas 1:1. Cada fila del CSV → un registro. Sin concatenación.
-
-Se documenta el mapeo esperado de columnas del CSV a campos de la tabla en `AGENTS.md` (o en un README breve dentro de `src/lib/cerebro/`) para que la próxima fase implemente el importador. No se crea función de importación todavía — el usuario no lo pidió.
-
-### 5. Consulta futura (arquitectura, no implementación)
-
-La tabla queda preparada para queries del tipo:
-
-```sql
-SELECT intervention_text, image_url
-FROM knowledge_documents
-WHERE active = true
-  AND module = $1
-  AND subcategory = ANY($2)
-  AND severity_level = $3
-  AND behavioral_condition = ANY($4);
+```text
+CREATE UNIQUE INDEX knowledge_documents_dedupe_idx
+  ON public.knowledge_documents (module, coalesce(subcategory,''),
+       coalesce(severity_level,''), coalesce(behavioral_condition,''))
+  WHERE active;
 ```
 
-Los índices compuestos anteriores soportan estos filtros.
+### 3. UI de administrador para futuras cargas
 
-### 6. Integración futura
+Nueva ruta protegida `/_authenticated/app/admin/cerebro`:
 
-Las tablas `assessments`, `neurodevelopment_roadmaps` (initial_reports) y la futura `interactive_plans` permanecen intactas. La Skill usará `patient_id → assessment → perfil` para derivar los filtros que aplicará contra `knowledge_documents`.
+- Gate por rol: si `has_role(auth.uid(),'administrador')` es falso → redirect a `/app`.
+- Componentes:
+  - Contador actual de reglas activas por módulo (tabla resumen).
+  - Zona de carga: `<input type="file" accept=".csv">` con preview de las primeras 5 filas y detección de columnas.
+  - Validación de headers antes de importar; muestra columnas no reconocidas si las hay.
+  - Modos: **Append** (default, salta duplicados por índice único) o **Reemplazar versión** (marca `active=false` las filas previas de la versión indicada e inserta como nueva `version`).
+  - Botón "Importar" → llama server function que hace el bulk insert.
+- Server functions nuevas (`src/lib/cerebro/knowledge.functions.ts`), todas con `requireSupabaseAuth` y verificación de rol admin dentro del handler:
+  - `getKnowledgeStats()` → conteo por módulo.
+  - `importKnowledgeCsv({ rows, version, mode })` → valida y hace `insert` en `knowledge_documents` con la sesión del admin (RLS ya permite INSERT sólo a administradores).
+- El parseo del CSV se hace en el cliente (`papaparse`) para no subir archivos grandes; se envía JSON al server.
 
-### 7. Validación
+### 4. Preparación para la Skill
 
-- Migración aplicada sin warnings de linter.
-- Bucket creado.
-- RLS verificado: administrador puede insertar/editar; usuario autenticado sólo lee reglas activas; anónimo no ve nada.
+Ya cubierto por los índices compuestos existentes (`module, subcategory, severity_level` y `module, behavioral_condition`) sobre filas activas. Sin cambios adicionales.
+
+### 5. Validación final
+
+- Confirmar 132 registros insertados y desglose por módulo.
+- Confirmar que `/app/admin/cerebro` carga para admin, redirige a no-admin.
+- Confirmar que una re-importación del mismo CSV no crea duplicados.
+- `image_url` queda como `NULL`, listo para futuras cargas sin cambios de esquema.
 
 ### Detalles técnicos
 
-- Archivos nuevos: sólo la migración SQL y (opcional) `src/lib/cerebro/README.md` con el mapeo CSV → columnas. Sin cambios en tablas existentes ni en código de app.
-- No se crean server functions de lectura todavía; se añadirán junto con el motor del Plan Interactivo en la fase siguiente.
+- Archivos nuevos:
+  - `src/lib/cerebro/knowledge.functions.ts` (server fns).
+  - `src/routes/_authenticated/app.admin.cerebro.tsx` (UI).
+- Migración: índice único parcial.
+- Dependencia nueva: `papaparse` + `@types/papaparse`.
+- Sin cambios a tablas existentes ni al flujo de usuario final.
