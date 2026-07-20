@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect } from "react";
-import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
-import { getInteractivePlan } from "@/lib/plan/plan.functions";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Loader2, Sparkles, BookOpen } from "lucide-react";
+import { getInteractivePlan, getManualDownloadUrl } from "@/lib/plan/plan.functions";
 import { MoholkaFloatingButton } from "@/components/plan/MoholkaFloatingButton";
 
 export const Route = createFileRoute("/_authenticated/app/plan/$patientId/ver")({
@@ -62,6 +62,18 @@ function VerPlanInteractivo() {
   const { patientId } = Route.useParams();
   const navigate = useNavigate();
   const fetchPlan = useServerFn(getInteractivePlan);
+  const fetchManual = useServerFn(getManualDownloadUrl);
+  const [manualBusy, setManualBusy] = useState(false);
+
+  const openManual = async () => {
+    setManualBusy(true);
+    try {
+      const res = await fetchManual({ data: { patientId } });
+      if (res.available) window.open(res.url, "_blank", "noopener");
+    } finally {
+      setManualBusy(false);
+    }
+  };
 
   const plan = useQuery({
     queryKey: ["interactive-plan", patientId],
@@ -181,9 +193,20 @@ function VerPlanInteractivo() {
                       <Row label="Progresión" value={c.progression} />
                       <Row label="Materiales" value={c.materials} />
                     </dl>
-                    <p className="mt-3 rounded-lg bg-primary/5 p-3 text-xs italic text-muted-foreground">
-                      {MANUAL_REMINDER}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={openManual}
+                      disabled={manualBusy}
+                      className="mt-3 flex w-full items-start gap-2 rounded-lg bg-primary/5 p-3 text-left text-xs italic text-muted-foreground transition hover:bg-primary/10 disabled:opacity-60"
+                    >
+                      <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                      <span>
+                        {MANUAL_REMINDER}{" "}
+                        <span className="font-medium not-italic text-primary underline underline-offset-2">
+                          Descargar Manual
+                        </span>
+                      </span>
+                    </button>
                   </div>
                 ))}
               </div>
