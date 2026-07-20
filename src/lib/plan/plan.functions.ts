@@ -182,3 +182,157 @@ export const getManualStatus = createServerFn({ method: "GET" })
         (obj.metadata as { size?: number } | null | undefined)?.size ?? null,
     };
   });
+
+// ─── Disparo de generación del Plan Interactivo ──────────────────────────────
+//
+// Estrategia: la generación se dispara desde la propia pantalla del Plan,
+// no desde el webhook. En Cloudflare Workers un `fetch` fire-and-forget muere
+// cuando el handler retorna, así que la generación debe vivir dentro de un
+// request awaited desde el cliente. El lock atómico impide duplicados incluso
+// con reintentos concurrentes del botón.
+
+const GENERATING_STALE_MS = 3 * 60 * 1000; // 3 minutos
+
+export const startPlanGeneration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: { patientId: string; force?: boolean }) =>
+      z
+        .object({
+          patientId: z.string().uuid(),
+          force: z.boolean().optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // 1) Verifica propiedad del paciente (RLS + doble check).
+    const { data: patient } = await supabase
+      .from("patients")
+      .select("id")
+      .eq("id", data.patientId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!patient) {
+      return { status: "error" as const, reason: "no_patient" as const };
+    }
+
+    // 2) Debe existir un pago aprobado del usuario para este paciente.
+    const { data: paidPayment } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("patient_id", data.patientId)
+      .eq("status", "paid")
+      .limit(1)
+      .maybeSingle();
+    if (!paidPayment) {
+      return { status: "error" as const, reason: "not_paid" as const };
+    }
+
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+
+    // 3) Roadmap más reciente del paciente.
+    const { data: roadmap } = await supabaseAdmin
+      .from("neurodevelopment_roadmaps")
+      .select(
+        "id, plan_status, plan_generation_status, plan_generation_status_updated_at, plan_generation_error",
+      )
+      .eq("patient_id", data.patientId)
+      .order("generated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!roadmap) {
+      return { status: "error" as const, reason: "no_roadmap" as const };
+    }
+    if (roadmap.plan_status !== "unlocked") {
+      return { status: "error" as const, reason: "not_unlocked" as const };
+    }
+
+    const genStatus = (roadmap.plan_generation_status ?? "pending") as
+      | "pending"
+      | "generating"
+      | "ready"
+      | "failed";
+    const statusUpdatedAt = (
+      roadmap as { plan_generation_status_updated_at?: string | null }
+    ).plan_generation_status_updated_at;
+    const staleGenerating =
+      genStatus === "generating" &&
+      (!statusUpdatedAt ||
+        Date.now() - new Date(statusUpdatedAt).getTime() >= GENERATING_STALE_MS);
+
+    if (genStatus === "ready") {
+      return { status: "ready" as const };
+    }
+    if (genStatus === "generating" && !staleGenerating) {
+      return { status: "generating" as const };
+    }
+    // force sólo aplica desde failed o generating vencido; nunca desde
+    // ready ni desde un generating vivo (ya cortamos arriba).
+    if (data.force && genStatus !== "failed" && !staleGenerating) {
+      // pending + force: aceptamos, comportamiento idéntico al no-force.
+    }
+
+    // 4) Lock atómico condicional. Todo el estado admisible se decide en
+    //    el WHERE: si otro request ganó el lock, este UPDATE devuelve 0 filas.
+    const staleCutoff = new Date(
+      Date.now() - GENERATING_STALE_MS,
+    ).toISOString();
+    const { data: lockedRows, error: lockErr } = await supabaseAdmin
+      .from("neurodevelopment_roadmaps")
+      .update({
+        plan_generation_status: "generating",
+        plan_generation_error: null,
+      })
+      .eq("id", roadmap.id)
+      .eq("plan_status", "unlocked")
+      .or(
+        `plan_generation_status.in.(pending,failed),and(plan_generation_status.eq.generating,plan_generation_status_updated_at.lt.${staleCutoff})`,
+      )
+      .select("id");
+    if (lockErr) {
+      console.error("[startPlanGeneration] lock error", lockErr);
+      return { status: "error" as const, reason: "lock_failed" as const };
+    }
+    if (!lockedRows || lockedRows.length === 0) {
+      // Otro request ya lo tomó.
+      return { status: "generating" as const };
+    }
+
+    console.info("[startPlanGeneration] lock acquired", {
+      patientId: data.patientId,
+      roadmapId: roadmap.id,
+    });
+
+    // 5) Ejecuta la Skill dentro de este mismo request awaited.
+    try {
+      const { generateInteractivePlan } = await import(
+        "./skill/generator"
+      );
+      const result = await generateInteractivePlan(data.patientId, {
+        skipLock: true,
+      });
+      if (result.ok) {
+        return { status: "ready" as const };
+      }
+      return {
+        status: "failed" as const,
+        reason: result.reason,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[startPlanGeneration] fatal", err);
+      await supabaseAdmin
+        .from("neurodevelopment_roadmaps")
+        .update({
+          plan_generation_status: "failed",
+          plan_generation_error: message.slice(0, 2000),
+        })
+        .eq("id", roadmap.id);
+      return { status: "failed" as const, reason: message };
+    }
+  });
