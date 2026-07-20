@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { Mail, Lock, User, Eye, EyeOff, Users, Stethoscope } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +27,6 @@ export const Route = createFileRoute("/auth")({
 });
 
 type Tab = "login" | "register";
-type Role = "usuario" | "administrador";
 
 function AuthPage() {
   const [tab, setTab] = useState<Tab>("login");
@@ -241,7 +240,6 @@ function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: strin
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [role, setRole] = useState<Role>("usuario");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
@@ -271,7 +269,7 @@ function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: strin
           options: {
             emailRedirectTo:
               window.location.origin + (next ?? "/app"),
-            data: { full_name: name, role },
+            data: { full_name: name, role: "usuario" },
           },
         });
         setLoading(false);
@@ -340,28 +338,6 @@ function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: strin
         }
       />
 
-      <div className="mt-2">
-        <p className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Quiero registrarme como
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          <RoleCard
-            selected={role === "usuario"}
-            onClick={() => setRole("usuario")}
-            icon={<Users className="h-5 w-5" />}
-            title="Padre / Madre"
-            subtitle="Familia"
-          />
-          <RoleCard
-            selected={role === "administrador"}
-            onClick={() => setRole("administrador")}
-            icon={<Stethoscope className="h-5 w-5" />}
-            title="Neuropsicólogo"
-            subtitle="Administrador"
-          />
-        </div>
-      </div>
-
       <button
         type="submit"
         disabled={loading}
@@ -373,46 +349,6 @@ function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: strin
       <SocialDivider />
       <GoogleButton next={next} />
     </form>
-  );
-}
-
-function RoleCard({
-  selected,
-  onClick,
-  icon,
-  title,
-  subtitle,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  icon: ReactNode;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex flex-col items-start gap-2 rounded-2xl border p-4 text-left transition",
-        selected
-          ? "border-primary bg-accent ring-2 ring-primary/30"
-          : "border-border bg-background hover:border-primary/40",
-      )}
-    >
-      <span
-        className={cn(
-          "inline-flex h-9 w-9 items-center justify-center rounded-full",
-          selected ? "bg-primary text-primary-foreground" : "bg-muted text-primary",
-        )}
-      >
-        {icon}
-      </span>
-      <div>
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
-      </div>
-    </button>
   );
 }
 
