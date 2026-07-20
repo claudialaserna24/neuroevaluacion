@@ -1,36 +1,53 @@
+# Plan: Actualización de contenido textual en Landing Page
 
-# Auditoría del flujo de compra
+## Alcance
+Actualizar únicamente los textos de `src/routes/index.tsx`, manteniendo intacto el diseño, layout, colores, tipografía, espaciados, iconografía, imágenes y navegación.
 
-Revisé los cuatro archivos del módulo (`app.informe.tsx`, `app.plan-interactivo.tsx`, `checkout.tsx`, `payments.functions.ts`) y confirmé que todas las pantallas y modales están conectadas. **No hace falta modificar nada** para probar el flujo completo sin escribir rutas manualmente.
+## Cambios a realizar
 
-## Mapa de botones → pantallas
+### 1. Hero principal
+- **Etiqueta superior**: reemplazar `Para familias` por `Para familias que buscan una guía clara para el neurodesarrollo`.
+- **Título H1**: reemplazar `Comprende el neurodesarrollo de tu hijo/a con claridad.` por `Descubre por dónde empezar para apoyar el desarrollo de tu hijo.`.
+- **Subtítulo**: reemplazar el párrafo actual por:
+  > Completa una evaluación guiada y recibe una Hoja de Ruta para el Neurodesarrollo, un resumen gratuito que organiza las principales áreas que requieren atención.
+  > 
+  > Si decides continuar, podrás acceder a un programa de acompañamiento que incluye un Plan Interactivo Personalizado, el acompañamiento de Moholka, un agente de Inteligencia Artificial especializado en neurodesarrollo, y una membresía grupal dirigida por la neuropsicóloga para profundizar en temas de neurodesarrollo y resolver dudas durante el proceso.
+- **Botón principal**: mantener `Comenzar evaluación gratuita` (ya coincide).
+- **Texto debajo del botón**: añadir el párrafo `Al finalizar recibirás tu Hoja de Ruta para el Neurodesarrollo.` debajo del botón principal.
 
-```text
-1. Hoja de Ruta   (/app/informe?patient=…)
-   └─ Botón "Desbloquear mi Plan Interactivo"     → abre Modal de confirmación
-   └─ Botón "Conocer todo lo que incluye"         → /app/plan-interactivo
+### 2. Sección "Cómo funciona"
+Mantener los 3 pasos y sus iconos; actualizar títulos y descripciones.
 
-2. Modal de confirmación  (dentro de la Hoja de Ruta)
-   ├─ Botón "Conocer mi Plan"                     → /app/plan-interactivo
-   ├─ Botón "Continuar al pago"                   → /checkout
-   ├─ Botón X / Esc / clic fuera                  → cierra el modal
+- **Encabezado de sección**: mantener `Cómo funciona` y subtítulo `Tres pasos simples para entender y actuar.`.
+- **Paso 1**:
+  - Título: `Conoce las necesidades de tu hijo`
+  - Body: `Responde una evaluación guiada que analiza diferentes áreas del neurodesarrollo mediante preguntas organizadas y fáciles de completar.`
+- **Paso 2**:
+  - Título: `Recibe tu Hoja de Ruta para el Neurodesarrollo`
+  - Body: `Obtén un resumen gratuito con las principales prioridades identificadas y una orientación clara para saber por dónde comenzar.`
+- **Paso 3**:
+  - Título: `Accede al Programa de Acompañamiento`
+  - Body: lista con los ítems:
+    - Un Plan Interactivo Personalizado.
+    - Actividades organizadas según las necesidades identificadas.
+    - Recursos prácticos para implementar en casa.
+    - El acompañamiento de Moholka, un agente de Inteligencia Artificial especializado en neurodesarrollo que responderá preguntas relacionadas con la implementación del plan.
+    - Una membresía grupal periódica liderada por la neuropsicóloga para ampliar conocimientos sobre neurodesarrollo y resolver dudas comunes del proceso.
 
-3. Conoce tu Plan Interactivo  (/app/plan-interactivo?patient=…)
-   └─ CTA final "Desbloquear mi Plan Interactivo" → /checkout
+### 3. Sección "Para familias"
+- **Título H2**: reemplazar `Para familias que buscan claridad` por `No necesitas tener todas las respuestas para dar el siguiente paso.`.
+- **Texto**: reemplazar el párrafo actual por:
+  > NEUROPLAN ayuda a las familias a organizar la información, identificar las principales necesidades del neurodesarrollo y comenzar con una orientación estructurada, clara y basada en evidencia.
+  > 
+  > Nuestro objetivo no es reemplazar la valoración profesional, sino ayudarte a actuar con mayor confianza mientras decides los siguientes pasos para acompañar el desarrollo de tu hijo.
 
-4. Checkout  (/checkout?patient=…)
-   ├─ Botón "Pagar con Wompi"                     → crea payment pendiente + toast
-   └─ Botón "Volver a la Hoja de Ruta"            → /app/informe
-```
+### 4. Último llamado a la acción (CTA final)
+- **Título H2**: reemplazar `Da el primer paso hoy.` por `Empieza hoy con una orientación clara para tu familia.`.
+- **Subtítulo**: reemplazar por:
+  > Completa la evaluación gratuita y recibe tu Hoja de Ruta para el Neurodesarrollo. Descubre las principales prioridades identificadas y decide cuándo dar el siguiente paso con nuestro Programa de Acompañamiento.
+- **Botón**: mantener `Crear mi cuenta` (ya coincide).
 
-## Cómo probarlo desde cero (sin URLs manuales)
-
-1. Menú inferior → **Informe** (Hoja de Ruta).
-2. En la sección "Continúa con tu Plan Interactivo" pulsa **Desbloquear mi Plan Interactivo** → aparece el modal.
-3. En el modal pulsa **Conocer mi Plan** → llega a la landing interna.
-4. En la landing, baja al CTA y pulsa **Desbloquear mi Plan Interactivo** → llega al Checkout.
-5. En el Checkout pulsa **Pagar con Wompi** → se crea el registro `payments` (pending) y se muestra el toast "Integración con Wompi en preparación."
-
-## Estado
-
-Sin pantallas huérfanas y sin conexiones faltantes. Al aprobar este plan no ejecutaré cambios — es solo la confirmación del recorrido. Si prefieres que ajuste algún botón (por ejemplo, forzar que "Conocer mi Plan" siempre pase primero por la landing antes del checkout), dime y armo un plan con esos cambios.
+## Consideraciones
+- No se modificarán clases CSS, estructura de componentes, iconos ni enlaces.
+- Se respetará el estilo limpio y minimalista actual.
+- Se verificará que el build pase tras los cambios.
