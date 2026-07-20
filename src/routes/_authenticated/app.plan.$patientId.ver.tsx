@@ -279,7 +279,7 @@ function VerPlanInteractivo() {
         </>
       )}
 
-      <MoholkaFloatingButton ready={ready} />
+      <MoholkaFloatingButton ready={ready} patientId={patientId} />
     </article>
   );
 }

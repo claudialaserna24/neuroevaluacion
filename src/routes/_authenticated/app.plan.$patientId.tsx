@@ -235,8 +235,13 @@ function PlanInteractivoDashboard() {
         El Plan Interactivo es una herramienta educativa y orientadora. No reemplaza la valoración clínica de un profesional.
       </p>
 
-      <MoholkaPanel open={moholkaOpen} onOpenChange={setMoholkaOpen} ready={ready} />
-      <MoholkaFloatingButton ready={ready} />
+      <MoholkaPanel
+        open={moholkaOpen}
+        onOpenChange={setMoholkaOpen}
+        ready={ready}
+        patientId={patientId}
+      />
+      <MoholkaFloatingButton ready={ready} patientId={patientId} />
     </article>
   );
 }
