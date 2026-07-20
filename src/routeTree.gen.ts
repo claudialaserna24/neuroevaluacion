@@ -23,6 +23,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as ApiPublicWompiWebhookRouteImport } from './routes/api/public/wompi-webhook'
+import { Route as ApiPublicPlanGenerateRouteImport } from './routes/api/public/plan-generate'
 import { Route as AuthenticatedAppSeguimientoRouteImport } from './routes/_authenticated/app.seguimiento'
 import { Route as AuthenticatedAppPlanInteractivoRouteImport } from './routes/_authenticated/app.plan-interactivo'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
@@ -120,6 +121,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
 const ApiPublicWompiWebhookRoute = ApiPublicWompiWebhookRouteImport.update({
   id: '/api/public/wompi-webhook',
   path: '/api/public/wompi-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPlanGenerateRoute = ApiPublicPlanGenerateRouteImport.update({
+  id: '/api/public/plan-generate',
+  path: '/api/public/plan-generate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppSeguimientoRoute =
@@ -298,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
   '/app/seguimiento': typeof AuthenticatedAppSeguimientoRoute
+  '/api/public/plan-generate': typeof ApiPublicPlanGenerateRoute
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
   '/app/seguimiento': typeof AuthenticatedAppSeguimientoRoute
+  '/api/public/plan-generate': typeof ApiPublicPlanGenerateRoute
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
@@ -380,6 +388,7 @@ export interface FileRoutesById {
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
   '/_authenticated/app/seguimiento': typeof AuthenticatedAppSeguimientoRoute
+  '/api/public/plan-generate': typeof ApiPublicPlanGenerateRoute
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/plan-interactivo'
     | '/app/seguimiento'
+    | '/api/public/plan-generate'
     | '/api/public/wompi-webhook'
     | '/app/'
     | '/app/admin/cerebro'
@@ -462,6 +472,7 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/plan-interactivo'
     | '/app/seguimiento'
+    | '/api/public/plan-generate'
     | '/api/public/wompi-webhook'
     | '/app'
     | '/app/admin/cerebro'
@@ -504,6 +515,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/plan-interactivo'
     | '/_authenticated/app/seguimiento'
+    | '/api/public/plan-generate'
     | '/api/public/wompi-webhook'
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/cerebro'
@@ -531,6 +543,7 @@ export interface RootRouteChildren {
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicPlanGenerateRoute: typeof ApiPublicPlanGenerateRoute
   ApiPublicWompiWebhookRoute: typeof ApiPublicWompiWebhookRoute
 }
 
@@ -632,6 +645,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/wompi-webhook'
       fullPath: '/api/public/wompi-webhook'
       preLoaderRoute: typeof ApiPublicWompiWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/plan-generate': {
+      id: '/api/public/plan-generate'
+      path: '/api/public/plan-generate'
+      fullPath: '/api/public/plan-generate'
+      preLoaderRoute: typeof ApiPublicPlanGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/seguimiento': {
@@ -960,6 +980,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutReturnRoute: CheckoutReturnRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicPlanGenerateRoute: ApiPublicPlanGenerateRoute,
   ApiPublicWompiWebhookRoute: ApiPublicWompiWebhookRoute,
 }
 export const routeTree = rootRouteImport
