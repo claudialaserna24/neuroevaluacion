@@ -176,6 +176,80 @@ export type Database = {
         }
         Relationships: []
       }
+      moholka_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          patient_id: string
+          roadmap_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_id: string
+          roadmap_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_id?: string
+          roadmap_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moholka_conversations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moholka_conversations_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "neurodevelopment_roadmaps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moholka_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moholka_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "moholka_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       neurodevelopment_roadmaps: {
         Row: {
           assessment_id: string
