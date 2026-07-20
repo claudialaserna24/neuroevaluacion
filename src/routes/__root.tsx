@@ -88,13 +88,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         property: "og:description",
         content:
-          "Evaluación inteligente y plan personalizado para familias de niños con desafíos del neurodesarrollo.",
+          "NEUROPLAN acompaña a las familias en la evaluación y comprensión del neurodesarrollo de sus hijos, con un plan interactivo personalizado.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "NEUROPLAN" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "twitter:title", content: "NEUROPLAN — Orientación experta en neurodesarrollo infantil" },
+      { name: "twitter:description", content: "NEUROPLAN acompaña a las familias en la evaluación y comprensión del neurodesarrollo de sus hijos, con un plan interactivo personalizado." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/46011ea2-4dd3-4631-a9c6-6cf941f6b5d0/id-preview-7001671b--9a3fbf00-b133-4216-b26e-63970ded57ab.lovable.app-1784548891322.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/46011ea2-4dd3-4631-a9c6-6cf941f6b5d0/id-preview-7001671b--9a3fbf00-b133-4216-b26e-63970ded57ab.lovable.app-1784548891322.png" },
     ],
     links: [
       {
@@ -109,7 +113,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600;700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,
