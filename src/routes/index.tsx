@@ -9,18 +9,37 @@ export const Route = createFileRoute("/")({
 const steps = [
   {
     icon: ClipboardList,
-    title: "Evaluación inteligente",
-    body: "Respondes preguntas cuidadosamente diseñadas sobre el perfil cognitivo, funcional y de reflejos primitivos de tu hijo/a.",
+    title: "Conoce las necesidades de tu hijo",
+    body: "Responde una evaluación guiada que analiza diferentes áreas del neurodesarrollo mediante preguntas organizadas y fáciles de completar.",
   },
   {
     icon: FileText,
-    title: "Resumen gratuito",
-    body: "Recibes un resumen inteligente con los principales hallazgos y áreas a acompañar, sin costo.",
+    title: "Recibe tu Hoja de Ruta para el Neurodesarrollo",
+    body: "Obtén un resumen gratuito con las principales prioridades identificadas y una orientación clara para saber por dónde comenzar.",
   },
   {
     icon: Sparkles,
-    title: "Plan personalizado",
-    body: "Desbloqueas un plan interactivo con estrategias claras, actividades y seguimiento para tu familia.",
+    title: "Accede al Programa de Acompañamiento",
+    body: (
+      <>
+        Si decides continuar, desbloquearás un programa que incluye:
+        <ul className="mt-2 list-disc space-y-1 pl-4 text-sm leading-relaxed text-muted-foreground">
+          <li>Un Plan Interactivo Personalizado.</li>
+          <li>Actividades organizadas según las necesidades identificadas.</li>
+          <li>Recursos prácticos para implementar en casa.</li>
+          <li>
+            El acompañamiento de Moholka, un agente de Inteligencia Artificial
+            especializado en neurodesarrollo que responderá preguntas relacionadas
+            con la implementación del plan.
+          </li>
+          <li>
+            Una membresía grupal periódica liderada por la neuropsicóloga para
+            ampliar conocimientos sobre neurodesarrollo y resolver dudas comunes
+            del proceso.
+          </li>
+        </ul>
+      </>
+    ),
   },
 ];
 
@@ -60,14 +79,23 @@ function Landing() {
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-primary">
               <HeartHandshake className="h-3.5 w-3.5" />
-              Para familias
+              Para familias que buscan una guía clara para el neurodesarrollo
             </span>
             <h1 className="mt-5 font-serif text-4xl leading-tight tracking-tight text-foreground md:text-6xl">
-              Comprende el neurodesarrollo de tu hijo/a con claridad.
+              Descubre por dónde empezar para apoyar el desarrollo de tu hijo.
             </h1>
             <p className="mt-5 text-base leading-relaxed text-muted-foreground md:text-lg">
-              Una evaluación inteligente y un plan personalizado que te acompañan
-              paso a paso, con respaldo clínico y sin tecnicismos.
+              Completa una evaluación guiada y recibe una Hoja de Ruta para el
+              Neurodesarrollo, un resumen gratuito que organiza las principales
+              áreas que requieren atención.
+            </p>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground md:text-lg">
+              Si decides continuar, podrás acceder a un programa de acompañamiento
+              que incluye un Plan Interactivo Personalizado, el acompañamiento de
+              Moholka, un agente de Inteligencia Artificial especializado en
+              neurodesarrollo, y una membresía grupal dirigida por la
+              neuropsicóloga para profundizar en temas de neurodesarrollo y
+              resolver dudas durante el proceso.
             </p>
             <div className="mt-8">
               <Link
@@ -77,6 +105,9 @@ function Landing() {
                 Comenzar evaluación gratuita
                 <ArrowRight className="h-4 w-4" />
               </Link>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Al finalizar recibirás tu Hoja de Ruta para el Neurodesarrollo.
+              </p>
             </div>
           </div>
         </section>
@@ -106,9 +137,9 @@ function Landing() {
                 <h3 className="mt-4 font-serif text-xl text-foreground">
                   {s.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                <div className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {s.body}
-                </p>
+                </div>
               </li>
             ))}
           </ol>
@@ -118,13 +149,18 @@ function Landing() {
         <section className="border-t border-border/60 py-16 md:py-20">
           <div className="max-w-2xl">
             <h2 className="font-serif text-2xl tracking-tight text-foreground md:text-3xl">
-              Para familias que buscan claridad
+              No necesitas tener todas las respuestas para dar el siguiente paso.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              NEUROPLAN está pensado para padres y madres de niños con desafíos
-              del neurodesarrollo —atención, aprendizaje, regulación,
-              lenguaje, coordinación— que quieren entender qué está pasando y
-              qué hacer a continuación.
+              NEUROPLAN ayuda a las familias a organizar la información,
+              identificar las principales necesidades del neurodesarrollo y
+              comenzar con una orientación estructurada, clara y basada en
+              evidencia.
+            </p>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+              Nuestro objetivo no es reemplazar la valoración profesional, sino
+              ayudarte a actuar con mayor confianza mientras decides los
+              siguientes pasos para acompañar el desarrollo de tu hijo.
             </p>
           </div>
         </section>
@@ -153,10 +189,13 @@ function Landing() {
         <section className="py-16 md:py-24">
           <div className="rounded-3xl bg-primary px-8 py-14 text-center text-primary-foreground">
             <h2 className="mx-auto max-w-xl font-serif text-3xl tracking-tight md:text-4xl">
-              Da el primer paso hoy.
+              Empieza hoy con una orientación clara para tu familia.
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm opacity-90">
-              Comienza la evaluación gratuita y recibe tu resumen inteligente.
+              Completa la evaluación gratuita y recibe tu Hoja de Ruta para el
+              Neurodesarrollo. Descubre las principales prioridades identificadas
+              y decide cuándo dar el siguiente paso con nuestro Programa de
+              Acompañamiento.
             </p>
             <Link
               to="/auth"
