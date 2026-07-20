@@ -197,8 +197,8 @@ function PlanInteractivoDashboard() {
             disabled={!manual_available || downloading === "manual"}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Download className="h-4 w-4" />
-            {downloading === "manual" ? "Preparando…" : "Descargar Manual Oficial (PDF)"}
+            <BookOpen className="h-4 w-4" />
+            {downloading === "manual" ? "Abriendo…" : "📘 Ver Manual Oficial de Ejercicios"}
           </button>
           {!manual_available && (
             <p className="mt-2 text-[11px] text-muted-foreground">

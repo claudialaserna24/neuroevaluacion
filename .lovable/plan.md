@@ -1,56 +1,36 @@
-## Manual Oficial de Ejercicios NEUROPLAN — integración completa
+## Objetivo
+Cargar el PDF oficial al bucket privado `manual-assets`, dejarlo operativo con la infraestructura ya construida (Signed URLs + validación de plan desbloqueado) y mejorar el CTA en móvil para abrir el PDF en pestaña nueva.
 
-Reutiliza la infraestructura existente (`manual_pdf_url` en `neurodevelopment_roadmaps`, `getManualDownloadUrl`, tarjeta del dashboard y recordatorio en fichas del visor), y añade lo que falta: bucket propio, resolución dinámica del Manual actual, y admin para reemplazarlo.
+## Estado actual (verificado)
+- Bucket privado `manual-assets` creado, con RLS que solo permite subir/listar a admin.
+- `plan.functions.ts` ya expone `getManualDownloadUrl` (verifica ownership + `plan_status = unlocked` + genera Signed URL 10 min) y `getManualStatus` para admin.
+- Constantes en `src/lib/plan/constants.ts`: `MANUAL_BUCKET = "manual-assets"`, `MANUAL_OBJECT_PATH = "manual-oficial-ejercicios.pdf"`.
+- Botones en `app.plan.$patientId.tsx` (tarjeta) y en `app.plan.$patientId.ver.tsx` (link dentro de cada ficha con el texto exacto solicitado) ya cableados a `getManualDownloadUrl`.
+- `manual_pdf_url` existe en la tabla, pero la implementación actual — intencionalmente — resuelve la disponibilidad consultando Storage directamente (patrón upsert: reemplazar el archivo actualiza a todos los planes sin migraciones). No se modifica.
 
-### 1. Storage — bucket dedicado
-- Crear bucket privado `manual-assets` mediante la herramienta de storage.
-- Políticas RLS sobre `storage.objects` (migración):
-  - SELECT: solo `service_role` (backend firma URLs).
-  - INSERT/UPDATE/DELETE: solo usuarios con rol `administrador`.
-- Sin acceso público. Descarga solo vía Signed URL generada por el backend.
+## Cambios a aplicar
 
-### 2. Manual "activo" único
-- No crear tabla nueva. Guardar el path del PDF vigente en una fila fija de `knowledge_documents` (o similar ya existente) — a confirmar; alternativa mínima: constante en DB vía una fila `settings` reutilizable. Para no crear tabla, se usará una **entrada única** en `knowledge_documents` con `module='manual'` y `content_path = manual-assets/<archivo>.pdf`.
-- `neurodevelopment_roadmaps.manual_pdf_url` se llenará automáticamente al activar un plan con el path del Manual activo actual (para trazabilidad y compatibilidad); si está vacío se usa el Manual activo global. Esto respeta "cada plan tiene asociado un único Manual" sin duplicar archivos.
+### 1. Subir el PDF oficial al bucket
+- Usar `supabase--storage_upload` con:
+  - `bucket: manual-assets`
+  - `path: manual-oficial-ejercicios.pdf` (mantengo el nombre estable que ya usa la constante, para no romper el cableado existente).
+  - `file_path: /mnt/user-uploads/MANUAL_OFICIAL_DE_INTEGRACION_DE_REFLEJOS_NEUROPLAN.pdf`.
+- Futuras actualizaciones: el admin lo reemplaza desde `/app/admin/manual` (ya construido) o volviendo a subir con el mismo path.
 
-### 3. Backend — server functions
-Modificar `src/lib/plan/plan.functions.ts`:
-- `getManualDownloadUrl({ patientId })`:
-  1. Verificar plan `unlocked` para ese paciente del usuario (ya existe `assertUnlocked`).
-  2. Resolver path: `roadmap.manual_pdf_url` si existe; si no, leer el registro activo de `knowledge_documents` (`module='manual'`, `is_active=true`).
-  3. Firmar contra bucket `manual-assets` con `supabaseAdmin.storage.createSignedUrl` (TTL 10 min).
-  4. Devolver `{ available, url }`.
-- Actualizar `getInteractivePlan` para reportar `manual_available` según existencia del registro activo, no de la constante hardcoded.
+### 2. Mejora del CTA (ajuste solicitado)
+En `src/routes/_authenticated/app.plan.$patientId.tsx`:
+- Cambiar el label del botón de `"Descargar Manual Oficial (PDF)"` a `"📘 Ver Manual Oficial de Ejercicios"`.
+- Cambiar el ícono `Download` por `BookOpen` (más coherente con "Ver").
+- Cambiar el estado de carga a `"Abriendo…"`.
+- Ajustar el handler para abrir la Signed URL en una nueva pestaña (`window.open(url, "_blank", "noopener")`) en lugar de forzar la descarga. El navegador mostrará el PDF en línea; el usuario decide descargar/imprimir. La Signed URL sigue siendo la misma (válida 10 min).
+- El link dentro de cada ficha del Plan Interactivo (`app.plan.$patientId.ver.tsx`) se mantiene tal cual: al hacer clic en "Manual Oficial de Ejercicios NEUROPLAN" ya llama a `getManualDownloadUrl` — sólo se ajusta para abrir en pestaña nueva por consistencia.
 
-Eliminar `MANUAL_OBJECT_PATH` de `src/lib/plan/constants.ts`; cambiar `MANUAL_BUCKET` a `"manual-assets"`.
+### 3. Verificación end-to-end
+Después del cambio:
+- Confirmar upload con `supabase--read_query` sobre `storage.objects` (bucket + path + size).
+- Correr `tsgo` para asegurar que los cambios de UI compilan.
+- Reporte funcional al usuario listando: archivo en storage, Signed URL generada por backend con TTL 10 min, botón abre PDF en pestaña, enlace desde fichas funciona, y los guards ya vigentes en `getManualDownloadUrl` (auth + ownership + `plan_status = 'unlocked'`) impiden el acceso a usuarios sin plan.
 
-### 4. Admin — subida/reemplazo
-Nueva ruta `src/routes/_authenticated/app.admin.manual.tsx` (solo rol administrador):
-- Muestra Manual activo actual (nombre, fecha de subida) y botón "Reemplazar Manual".
-- Input `<input type="file" accept="application/pdf">`.
-- Server fn `uploadManual` (admin-only, verificando `has_role`): sube al bucket `manual-assets/manual-oficial-<timestamp>.pdf` con `supabaseAdmin`, actualiza el registro activo en `knowledge_documents` (marca anterior `is_active=false`, inserta nuevo activo).
-- Sin versionado visible en el MVP.
-
-Enlace de acceso desde `/app/admin/cerebro` (o el layout admin existente).
-
-### 5. UI — Plan Interactivo
-- **Dashboard** (`app.plan.$patientId.tsx`): la tarjeta "Manual Oficial de Ejercicios NEUROPLAN" ya existe. Ajustar el copy al pedido:
-  > "Este manual contiene la explicación visual paso a paso de todos los ejercicios mencionados en tu Plan Interactivo."
-  El botón "Descargar Manual Oficial (PDF)" llama a `getManualDownloadUrl` y abre la URL firmada en una nueva pestaña (ya implementado).
-- **Visor** (`app.plan.$patientId.ver.tsx`): el recordatorio al pie de cada ficha ("La ejecución correcta de este ejercicio puede consultarse en el Manual Oficial…") se convierte en enlace/botón que dispara la misma descarga (`getManualDownloadUrl`).
-
-### 6. Validaciones
-- Bucket existe y es privado (verificable tras crear).
-- `getManualDownloadUrl` sin plan desbloqueado → error.
-- Signed URL con TTL corto (10 min, ya en `SIGNED_URL_TTL`).
-- Admin no-administrador no puede subir (verificación server-side + RLS).
-
-### Fuera de alcance
-- Skill del Plan Interactivo: sin cambios.
-- Hoja de Ruta, pagos, flujo actual: sin cambios.
-- No se embeben páginas del PDF ni miniaturas.
-
-### Detalles técnicos
-- Migración: políticas RLS de `storage.objects` para `manual-assets` (SELECT via service_role únicamente, escritura solo administradores); opcionalmente marcar `module='manual'` como valor permitido en `knowledge_documents` (si tiene CHECK constraint — a verificar en build).
-- Todos los accesos privilegiados vía `await import("@/integrations/supabase/client.server")` dentro del handler.
-- No se toca `client.ts`, `types.ts` (se regenerarán) ni el webhook de Wompi.
+## Fuera de alcance
+- No se modifica la Skill del Plan, la Hoja de Ruta, pagos, ni la lógica de generación.
+- No se toca `manual_pdf_url` en la BD (el patrón por Storage sigue vigente y es el que ya usa la UI).
