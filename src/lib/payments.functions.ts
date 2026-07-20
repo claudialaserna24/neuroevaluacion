@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { PLAN_PRICE_USD, PLAN_CURRENCY } from "./plan-pricing";
+import { PLAN_PRICE_USD, PLAN_CURRENCY, PLAN_PRICE_COP, WOMPI_CURRENCY } from "./plan-pricing";
 
 export const createPendingPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -45,7 +46,82 @@ export const createPendingPayment = createServerFn({ method: "POST" })
       .update({ wompi_reference: reference })
       .eq("id", inserted.id);
 
-    return { paymentId: inserted.id, reference };
+    // Construye la URL del Web Checkout de Wompi con firma de integridad.
+    const { generateIntegritySignature, getWompiConfig } = await import(
+      "./wompi.server"
+    );
+    const { publicKey, environment } = getWompiConfig();
+    const amountInCents = PLAN_PRICE_COP * 100;
+    const signature = generateIntegritySignature({
+      reference,
+      amountInCents,
+      currency: WOMPI_CURRENCY,
+    });
+
+    // Origin del request para armar redirect-url absoluto.
+    const req = getRequest();
+    const origin =
+      req?.headers.get("origin") ??
+      (req ? new URL(req.url).origin : "https://neuroevaluacion.lovable.app");
+    const redirectUrl = `${origin}/checkout/return?paymentId=${inserted.id}`;
+
+    const params = new URLSearchParams({
+      "public-key": publicKey,
+      currency: WOMPI_CURRENCY,
+      "amount-in-cents": String(amountInCents),
+      reference,
+      "signature:integrity": signature,
+      "redirect-url": redirectUrl,
+    });
+    const checkoutUrl = `https://checkout.wompi.co/p/?${params.toString()}`;
+
+    return {
+      paymentId: inserted.id,
+      reference,
+      checkoutUrl,
+      environment,
+    };
+  });
+
+export const getPaymentStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { paymentId: string }) =>
+    z.object({ paymentId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: payment, error } = await supabase
+      .from("payments")
+      .select(
+        "id, status, wompi_transaction_id, paid_at, patient_id, assessment_id",
+      )
+      .eq("id", data.paymentId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!payment) return null;
+
+    type RoadmapInfo = { plan_status: string; unlocked_at: string | null };
+    let roadmap: RoadmapInfo | null = null;
+    if (payment.assessment_id) {
+      const { data: rm } = await supabase
+        .from("neurodevelopment_roadmaps")
+        .select("plan_status, unlocked_at")
+        .eq("patient_id", payment.patient_id)
+        .eq("assessment_id", payment.assessment_id)
+        .maybeSingle();
+      roadmap = (rm as RoadmapInfo | null) ?? null;
+    }
+
+    return {
+      paymentId: payment.id,
+      status: payment.status,
+      transactionId: payment.wompi_transaction_id,
+      paidAt: payment.paid_at,
+      patientId: payment.patient_id,
+      planStatus: roadmap?.plan_status ?? "locked",
+      unlockedAt: roadmap?.unlocked_at ?? null,
+    };
   });
 
 export const getPlanStatus = createServerFn({ method: "GET" })

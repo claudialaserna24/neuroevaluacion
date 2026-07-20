@@ -7,7 +7,12 @@ import { ArrowLeft, Lock, ShieldCheck } from "lucide-react";
 import { getPatient } from "@/lib/patients.functions";
 import { getRoadmap } from "@/lib/assessment.functions";
 import { createPendingPayment } from "@/lib/payments.functions";
-import { PLAN_PRICE_USD, PLAN_CURRENCY, formatPlanPrice } from "@/lib/plan-pricing";
+import {
+  PLAN_PRICE_USD,
+  PLAN_CURRENCY,
+  formatPlanPrice,
+  formatPlanPriceCOP,
+} from "@/lib/plan-pricing";
 
 export const Route = createFileRoute("/_authenticated/checkout")({
   head: () => ({
@@ -46,9 +51,8 @@ function CheckoutPage() {
         },
       }),
     onSuccess: (res) => {
-      toast.success("Integración con Wompi en preparación.", {
-        description: `Referencia: ${res.reference}`,
-      });
+      // Redirige al Web Checkout oficial de Wompi.
+      window.location.href = res.checkoutUrl;
     },
     onError: (err: unknown) => {
       toast.error(err instanceof Error ? err.message : "No pudimos iniciar el pago.");
@@ -84,6 +88,7 @@ function CheckoutPage() {
             <Row label="Producto" value="Plan Interactivo NEUROPLAN" />
             <Row label="Moneda" value={PLAN_CURRENCY} />
             <Row label="Precio" value={formatPlanPrice()} />
+            <Row label="Equivalente en COP" value={formatPlanPriceCOP()} />
           </dl>
 
           <div className="mt-5 flex items-center justify-between rounded-2xl bg-primary/5 p-4 ring-1 ring-primary/20">
@@ -116,7 +121,9 @@ function CheckoutPage() {
             className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60"
           >
             <Lock className="h-4 w-4" />
-            {payMut.isPending ? "Preparando…" : "Pagar con Wompi"}
+            {payMut.isPending
+              ? "Estamos preparando tu pago de forma segura…"
+              : "Pagar con Wompi"}
           </button>
 
           <Link

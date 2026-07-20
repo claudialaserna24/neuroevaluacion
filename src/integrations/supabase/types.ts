@@ -398,7 +398,7 @@ export type Database = {
       app_role: "usuario" | "administrador"
       assessment_module: "cognitive" | "functional" | "reflex"
       assessment_status: "in_progress" | "completed"
-      payment_status: "pending" | "paid" | "failed" | "cancelled"
+      payment_status: "pending" | "paid" | "failed" | "cancelled" | "rejected"
       plan_status: "locked" | "unlocked"
     }
     CompositeTypes: {
@@ -531,7 +531,7 @@ export const Constants = {
       app_role: ["usuario", "administrador"],
       assessment_module: ["cognitive", "functional", "reflex"],
       assessment_status: ["in_progress", "completed"],
-      payment_status: ["pending", "paid", "failed", "cancelled"],
+      payment_status: ["pending", "paid", "failed", "cancelled", "rejected"],
       plan_status: ["locked", "unlocked"],
     },
   },
