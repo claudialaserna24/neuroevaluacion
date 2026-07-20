@@ -1,54 +1,56 @@
-## Motor de generación del Plan Interactivo NEUROPLAN — ajustes v2
+## Manual Oficial de Ejercicios NEUROPLAN — integración completa
 
-La Skill ya existe (`src/lib/plan/skill/*`) pero el schema, prompts, contexto y visor no cumplen la especificación nueva. Este plan la alinea sin tocar evaluación, Hoja de Ruta, pagos ni CEREBRO.
+Reutiliza la infraestructura existente (`manual_pdf_url` en `neurodevelopment_roadmaps`, `getManualDownloadUrl`, tarjeta del dashboard y recordatorio en fichas del visor), y añade lo que falta: bucket propio, resolución dinámica del Manual actual, y admin para reemplazarlo.
 
-### Cambios principales vs. implementación actual
+### 1. Storage — bucket dedicado
+- Crear bucket privado `manual-assets` mediante la herramienta de storage.
+- Políticas RLS sobre `storage.objects` (migración):
+  - SELECT: solo `service_role` (backend firma URLs).
+  - INSERT/UPDATE/DELETE: solo usuarios con rol `administrador`.
+- Sin acceso público. Descarga solo vía Signed URL generada por el backend.
 
-1. **Todos los reflejos, no solo prioritarios.** Hoy solo se consultan `reflexPriorities`. Debe incluirse toda la lista de reflejos de `roadmap.reflexes` (ordenada por prioridad descendente ya calculada por el backend).
-2. **Fichas más ricas.** Cada ficha debe incluir: `name`, `priority_level`, `purpose`, `description`, `frequency`, `repetitions`, `progression`, `materials`, más el mensaje obligatorio al Manual Oficial. El schema actual solo tiene `title/body/materials/frequency`.
-3. **Rutina 12 semanas basada en CEREBRO, no inventada.** La progresión (repeticiones, intensidad, frecuencia) debe leerse de CEREBRO (módulo Protocolos/Actividades) y la Skill solo organiza. Reforzar en prompt y pasar briefing de progresión por reflejo.
-4. **Sección Seguimiento semanal** como plantilla estructurada (12 filas con campos observables) en vez de texto libre.
-5. **Sección Finalización del programa** (invitación a nueva evaluación) reemplazando `closing`.
-6. **Aviso legal exacto**, actualizado al texto nuevo del brief.
-7. **Visor** actualizado para renderizar el nuevo shape (fichas ricas, rutina como tabla, seguimiento).
+### 2. Manual "activo" único
+- No crear tabla nueva. Guardar el path del PDF vigente en una fila fija de `knowledge_documents` (o similar ya existente) — a confirmar; alternativa mínima: constante en DB vía una fila `settings` reutilizable. Para no crear tabla, se usará una **entrada única** en `knowledge_documents` con `module='manual'` y `content_path = manual-assets/<archivo>.pdf`.
+- `neurodevelopment_roadmaps.manual_pdf_url` se llenará automáticamente al activar un plan con el path del Manual activo actual (para trazabilidad y compatibilidad); si está vacío se usa el Manual activo global. Esto respeta "cada plan tiene asociado un único Manual" sin duplicar archivos.
 
-### Archivos a modificar
+### 3. Backend — server functions
+Modificar `src/lib/plan/plan.functions.ts`:
+- `getManualDownloadUrl({ patientId })`:
+  1. Verificar plan `unlocked` para ese paciente del usuario (ya existe `assertUnlocked`).
+  2. Resolver path: `roadmap.manual_pdf_url` si existe; si no, leer el registro activo de `knowledge_documents` (`module='manual'`, `is_active=true`).
+  3. Firmar contra bucket `manual-assets` con `supabaseAdmin.storage.createSignedUrl` (TTL 10 min).
+  4. Devolver `{ available, url }`.
+- Actualizar `getInteractivePlan` para reportar `manual_available` según existencia del registro activo, no de la constante hardcoded.
 
-- `src/lib/plan/skill/schema.ts` — nuevo `PlanContentSchema`:
-  - `context: { child_name, age, diagnosis, reason, duration_weeks, intro }`
-  - `findings: { body }`
-  - `objectives: { items: string[] }`
-  - `instruction_cards: { intro, cards: [{ name, priority_level, purpose, description, frequency, repetitions, progression, materials, sources[] }] }`
-  - `routine_12_weeks: { intro, weeks: [{ week, focus, activities, adjustments }] }`
-  - `weekly_tracking: { intro, rows: [{ week, observations_prompt, achievements_prompt, difficulties_prompt }] }`
-  - `family_recommendations: { items: string[] }`
-  - `closing: { body }` (finalización + invitación nueva evaluación)
-  - `legal_notice: { body }`
-  - Todo plano, sin `.min/.max/.enum`.
-- `src/lib/plan/skill/context-builder.ts` — extraer del roadmap la lista completa de reflejos (`roadmap.reflexes` como array tipado con `reflex`, `level`, `percent`) además de las prioridades. Incluir `patient.age`, `diagnosis`, `motivo` en `PlanInput`.
-- `src/lib/plan/skill/cerebro-query.ts` — añadir helper `queryProgressionRules(module)` para leer Protocolos/Actividades específicos de progresión, manteniendo búsqueda incremental (nunca `select *` sin filtro).
-- `src/lib/plan/skill/generator.ts`:
-  - Iterar sobre TODOS los reflejos del roadmap, en orden ya calculado, no sobre `reflexPriorities`.
-  - Añadir bloque CEREBRO de "Protocolos de progresión" al briefing.
-  - Recordar en el prompt que la progresión debe copiarse literal de CEREBRO.
-- `src/lib/plan/skill/prompts.ts`:
-  - Reescribir instrucciones para las 9 secciones nuevas.
-  - Actualizar el aviso legal al texto exacto del brief.
-  - Reforzar: no inventar progresiones, incluir todos los reflejos, mensaje obligatorio al final de cada ficha.
-- `src/routes/_authenticated/app.plan.$patientId.ver.tsx` — actualizar tipos y render:
-  - Fichas con lista de campos etiquetados y footer con el mensaje del Manual Oficial.
-  - Rutina como tabla de 12 semanas.
-  - Bloque Seguimiento semanal.
-  - Aviso legal al final.
+Eliminar `MANUAL_OBJECT_PATH` de `src/lib/plan/constants.ts`; cambiar `MANUAL_BUCKET` a `"manual-assets"`.
 
-### Sin cambios
+### 4. Admin — subida/reemplazo
+Nueva ruta `src/routes/_authenticated/app.admin.manual.tsx` (solo rol administrador):
+- Muestra Manual activo actual (nombre, fecha de subida) y botón "Reemplazar Manual".
+- Input `<input type="file" accept="application/pdf">`.
+- Server fn `uploadManual` (admin-only, verificando `has_role`): sube al bucket `manual-assets/manual-oficial-<timestamp>.pdf` con `supabaseAdmin`, actualiza el registro activo en `knowledge_documents` (marca anterior `is_active=false`, inserta nuevo activo).
+- Sin versionado visible en el MVP.
 
-- `plan.functions.ts`, webhook Wompi, `plan-interactivo` landing, checkout, botones Moholka, tabla `neurodevelopment_roadmaps` y su columna `plan_content` (sigue como `jsonb`).
-- CEREBRO (`knowledge_documents`) y su UI de admin.
-- Motor `report-engine.ts` y Hoja de Ruta.
+Enlace de acceso desde `/app/admin/cerebro` (o el layout admin existente).
 
-### Validación tras implementar
+### 5. UI — Plan Interactivo
+- **Dashboard** (`app.plan.$patientId.tsx`): la tarjeta "Manual Oficial de Ejercicios NEUROPLAN" ya existe. Ajustar el copy al pedido:
+  > "Este manual contiene la explicación visual paso a paso de todos los ejercicios mencionados en tu Plan Interactivo."
+  El botón "Descargar Manual Oficial (PDF)" llama a `getManualDownloadUrl` y abre la URL firmada en una nueva pestaña (ya implementado).
+- **Visor** (`app.plan.$patientId.ver.tsx`): el recordatorio al pie de cada ficha ("La ejecución correcta de este ejercicio puede consultarse en el Manual Oficial…") se convierte en enlace/botón que dispara la misma descarga (`getManualDownloadUrl`).
 
-- Regenerar plan de un paciente `unlocked` con `regenerateInteractivePlan` y comprobar en DB que `plan_content` contiene las 9 secciones, `plan_generation_status='ready'`, `plan_generated_at` seteado.
-- Verificar que cada reflejo de `roadmap.reflexes` aparece en `instruction_cards.cards` con los 8 campos + mensaje del Manual.
-- Verificar en el visor que las 9 secciones se muestran en el orden pedido.
+### 6. Validaciones
+- Bucket existe y es privado (verificable tras crear).
+- `getManualDownloadUrl` sin plan desbloqueado → error.
+- Signed URL con TTL corto (10 min, ya en `SIGNED_URL_TTL`).
+- Admin no-administrador no puede subir (verificación server-side + RLS).
+
+### Fuera de alcance
+- Skill del Plan Interactivo: sin cambios.
+- Hoja de Ruta, pagos, flujo actual: sin cambios.
+- No se embeben páginas del PDF ni miniaturas.
+
+### Detalles técnicos
+- Migración: políticas RLS de `storage.objects` para `manual-assets` (SELECT via service_role únicamente, escritura solo administradores); opcionalmente marcar `module='manual'` como valor permitido en `knowledge_documents` (si tiene CHECK constraint — a verificar en build).
+- Todos los accesos privilegiados vía `await import("@/integrations/supabase/client.server")` dentro del handler.
+- No se toca `client.ts`, `types.ts` (se regenerarán) ni el webhook de Wompi.
