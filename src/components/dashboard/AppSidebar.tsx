@@ -1,4 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Home,
   User,
@@ -10,6 +12,7 @@ import {
   TrendingUp,
   UserRound,
   LogOut,
+  Shield,
 } from "lucide-react";
 import {
   Sidebar,
@@ -26,6 +29,7 @@ import {
 import { Logo } from "@/components/brand/logo";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { getMyRole } from "@/lib/admin/overview.functions";
 
 type Item = {
   label: string;
@@ -51,6 +55,12 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { setOpenMobile, isMobile } = useSidebar();
+  const fetchRole = useServerFn(getMyRole);
+  const role = useQuery({
+    queryKey: ["my-role"],
+    queryFn: () => fetchRole(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
@@ -108,6 +118,22 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {role.data?.isAdmin ? (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="gap-3">
+                    <Link to="/app/admin" onClick={closeOnMobile}>
+                      <Shield className="h-4 w-4" />
+                      <span>Panel administrador</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
       </SidebarContent>
 
       <SidebarFooter className="p-3">
