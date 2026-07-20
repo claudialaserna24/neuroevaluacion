@@ -41,7 +41,7 @@ export const getInteractivePlan = createServerFn({ method: "GET" })
     const { data: roadmap } = await supabase
       .from("neurodevelopment_roadmaps")
       .select(
-        "id, assessment_id, plan_status, plan_content, plan_generation_status, plan_generated_at, plan_activated_at, plan_pdf_url, unlocked_at",
+        "id, assessment_id, plan_status, plan_content, plan_generation_status, plan_generation_status_updated_at, plan_generation_error, plan_generated_at, plan_activated_at, plan_pdf_url, unlocked_at",
       )
       .eq("patient_id", data.patientId)
       .order("generated_at", { ascending: false })
@@ -64,6 +64,12 @@ export const getInteractivePlan = createServerFn({ method: "GET" })
         assessment_id: roadmap.assessment_id,
         plan_status: roadmap.plan_status,
         plan_generation_status: roadmap.plan_generation_status,
+        plan_generation_status_updated_at:
+          (roadmap as { plan_generation_status_updated_at?: string | null })
+            .plan_generation_status_updated_at ?? null,
+        plan_generation_error:
+          (roadmap as { plan_generation_error?: string | null })
+            .plan_generation_error ?? null,
         plan_content: roadmap.plan_content,
         plan_generated_at: roadmap.plan_generated_at,
         plan_activated_at: roadmap.plan_activated_at ?? roadmap.unlocked_at,
