@@ -134,6 +134,48 @@ export type Database = {
           },
         ]
       }
+      knowledge_documents: {
+        Row: {
+          active: boolean
+          behavioral_condition: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          intervention_text: string
+          module: string
+          severity_level: string | null
+          subcategory: string | null
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          active?: boolean
+          behavioral_condition?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          intervention_text: string
+          module: string
+          severity_level?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          active?: boolean
+          behavioral_condition?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          intervention_text?: string
+          module?: string
+          severity_level?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       neurodevelopment_roadmaps: {
         Row: {
           assessment_id: string
