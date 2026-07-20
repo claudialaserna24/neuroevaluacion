@@ -77,35 +77,35 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         (revenueByCurrency[c] ?? 0) + Number(p.amount ?? 0);
     }
 
-    // Active users: sign-ins in last 30 days (needs admin API)
-    let activeUsers30d = 0;
+    // Active users: sign-ins in last 30 days (needs admin API).
+    // Best-effort with a short timeout; a slow/failed call must never block the dashboard.
+    let activeUsers30d: number | null = null;
     try {
       const { supabaseAdmin } = await import(
         "@/integrations/supabase/client.server"
       );
-      const now = Date.now();
-      const cutoff = now - 30 * 86400000;
-      let page = 1;
-      const perPage = 200;
-      // Iterate up to a reasonable cap to avoid runaway loops.
-      for (let i = 0; i < 20; i++) {
+      const cutoff = Date.now() - 30 * 86400000;
+      const task = (async () => {
         const { data, error } = await supabaseAdmin.auth.admin.listUsers({
-          page,
-          perPage,
+          page: 1,
+          perPage: 1000,
         });
-        if (error) break;
-        const users = data?.users ?? [];
-        for (const u of users) {
+        if (error) throw error;
+        let n = 0;
+        for (const u of data?.users ?? []) {
           const ts = u.last_sign_in_at
             ? new Date(u.last_sign_in_at).getTime()
             : 0;
-          if (ts >= cutoff) activeUsers30d++;
+          if (ts >= cutoff) n++;
         }
-        if (users.length < perPage) break;
-        page++;
-      }
+        return n;
+      })();
+      activeUsers30d = await Promise.race([
+        task,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+      ]);
     } catch {
-      activeUsers30d = 0;
+      activeUsers30d = null;
     }
 
     return {
@@ -166,14 +166,19 @@ export const listAdminFamilies = createServerFn({ method: "GET" })
       const { supabaseAdmin } = await import(
         "@/integrations/supabase/client.server"
       );
-      await Promise.all(
-        ids.map(async (uid) => {
-          const { data } = await supabaseAdmin.auth.admin.getUserById(uid);
-          const u = data?.user;
-          emailByUser.set(uid, u?.email ?? null);
-          lastSignInByUser.set(uid, u?.last_sign_in_at ?? null);
-        }),
-      );
+      // One listUsers page covers the current base and avoids N+1 getUserById calls.
+      const task = supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const res = await Promise.race([
+        task,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+      ]);
+      if (res && "data" in res) {
+        for (const u of res.data?.users ?? []) {
+          if (!ids.includes(u.id)) continue;
+          emailByUser.set(u.id, u.email ?? null);
+          lastSignInByUser.set(u.id, u.last_sign_in_at ?? null);
+        }
+      }
     } catch {
       // ignore
     }
