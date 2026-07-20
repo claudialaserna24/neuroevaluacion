@@ -112,14 +112,52 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
 
     type RoadmapInfo = { plan_status: string; unlocked_at: string | null };
     let roadmap: RoadmapInfo | null = null;
+    let planGenerationStatus: string | null = null;
     if (payment.assessment_id) {
       const { data: rm } = await supabase
         .from("neurodevelopment_roadmaps")
-        .select("plan_status, unlocked_at")
+        .select("plan_status, unlocked_at, plan_generation_status")
         .eq("patient_id", payment.patient_id)
         .eq("assessment_id", payment.assessment_id)
         .maybeSingle();
-      roadmap = (rm as RoadmapInfo | null) ?? null;
+      roadmap = rm ? { plan_status: rm.plan_status, unlocked_at: rm.unlocked_at } : null;
+      planGenerationStatus =
+        (rm as { plan_generation_status?: string } | null)?.plan_generation_status ?? null;
+    }
+
+    // Fallback: si el pago está pagado y el desbloqueo ocurrió pero la Skill
+    // no arrancó o falló, re-disparamos el endpoint interno. Cubre el caso
+    // de que el fetch fire-and-forget del webhook se haya perdido.
+    if (
+      payment.status === "paid" &&
+      roadmap?.plan_status === "unlocked" &&
+      (planGenerationStatus === "pending" || planGenerationStatus === "failed")
+    ) {
+      try {
+        const { createHmac } = await import("crypto");
+        const req = getRequest();
+        const origin =
+          req?.headers.get("origin") ??
+          (req ? new URL(req.url).origin : "https://neuroevaluacion.lovable.app");
+        const payload = JSON.stringify({ patientId: payment.patient_id });
+        const eventsKey = process.env.WOMPI_EVENTS_KEY ?? "";
+        const signature = createHmac("sha256", eventsKey)
+          .update(payload)
+          .digest("hex");
+        void fetch(`${origin}/api/public/plan-generate`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-internal-signature": signature,
+          },
+          body: payload,
+        }).catch(() => undefined);
+        console.info("[getPaymentStatus] plan trigger fallback dispatched", {
+          patientId: payment.patient_id,
+        });
+      } catch (err) {
+        console.warn("[getPaymentStatus] fallback failed", err);
+      }
     }
 
     return {
@@ -130,6 +168,7 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
       patientId: payment.patient_id,
       planStatus: roadmap?.plan_status ?? "locked",
       unlockedAt: roadmap?.unlocked_at ?? null,
+      planGenerationStatus,
     };
   });
 
