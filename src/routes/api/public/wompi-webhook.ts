@@ -121,9 +121,23 @@ export const Route = createFileRoute("/api/public/wompi-webhook")({
                 plan_status: "unlocked",
                 unlocked_at: new Date().toISOString(),
                 plan_activated_at: new Date().toISOString(),
+                plan_generation_status: "pending",
               })
               .eq("patient_id", payment.patient_id)
               .eq("assessment_id", payment.assessment_id);
+
+            // Dispara la Skill "Generador del Plan Interactivo" en background.
+            // No bloqueamos la respuesta al webhook.
+            void (async () => {
+              try {
+                const { generateInteractivePlan } = await import(
+                  "@/lib/plan/skill/generator"
+                );
+                await generateInteractivePlan(payment.patient_id);
+              } catch (err) {
+                console.error("[wompi-webhook] plan skill trigger failed", err);
+              }
+            })();
           }
         } else if (["DECLINED", "VOIDED", "ERROR"].includes(upper)) {
           await supabaseAdmin
