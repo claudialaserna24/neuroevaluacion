@@ -28,7 +28,7 @@ type UiState =
   | { kind: "verifying" }
   | { kind: "approved"; patientId: string }
   | { kind: "rejected"; patientId?: string }
-  | { kind: "cancelled"; patientId?: string };
+  | { kind: "pending_verification"; patientId?: string };
 
 function CheckoutReturnPage() {
   const { paymentId } = Route.useSearch();
@@ -55,13 +55,13 @@ function CheckoutReturnPage() {
           return;
         }
         if (attempts >= maxAttempts) {
-          setState({ kind: "cancelled", patientId: res?.patientId });
+          setState({ kind: "pending_verification", patientId: res?.patientId });
           return;
         }
         setTimeout(tick, 2000);
       } catch {
         if (attempts >= maxAttempts) {
-          setState({ kind: "cancelled" });
+          setState({ kind: "pending_verification" });
           return;
         }
         setTimeout(tick, 2000);
@@ -79,7 +79,9 @@ function CheckoutReturnPage() {
         {state.kind === "verifying" && <Verifying />}
         {state.kind === "approved" && <Approved patientId={state.patientId} />}
         {state.kind === "rejected" && <Rejected patientId={state.patientId} />}
-        {state.kind === "cancelled" && <Cancelled patientId={state.patientId} />}
+        {state.kind === "pending_verification" && (
+          <PendingVerification patientId={state.patientId} />
+        )}
       </div>
     </div>
   );
@@ -160,17 +162,18 @@ function Rejected({ patientId }: { patientId?: string }) {
   );
 }
 
-function Cancelled({ patientId }: { patientId?: string }) {
+function PendingVerification({ patientId }: { patientId?: string }) {
   return (
     <>
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-        <XCircle className="h-8 w-8 text-muted-foreground" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
       <h1 className="mt-4 font-serif text-2xl leading-tight text-foreground">
-        Has cancelado el proceso de pago.
+        Estamos confirmando tu pago con el banco.
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        No se realizó ningún cargo. Puedes volver a intentarlo cuando lo desees.
+        Puede tardar unos minutos. Te avisaremos en tu panel apenas se
+        acredite. Si ya recibiste el cargo, no vuelvas a pagar.
       </p>
       {patientId ? (
         <Link
