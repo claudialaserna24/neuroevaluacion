@@ -63,11 +63,11 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       s
         .from("payments")
         .select("*", { count: "exact", head: true })
-        .eq("status", "approved"),
+        .eq("status", "paid"),
       s
         .from("payments")
         .select("amount, currency, status")
-        .eq("status", "approved"),
+        .eq("status", "paid"),
     ]);
 
     const revenueByCurrency: Record<string, number> = {};
@@ -182,9 +182,7 @@ export const listAdminFamilies = createServerFn({ method: "GET" })
       const ps = (patients ?? []).filter((x) => x.user_id === p.id);
       const rms = (roadmaps ?? []).filter((r) => r.user_id === p.id);
       const anyUnlocked = rms.some((r) => r.plan_status === "unlocked");
-      const anyPaid = rms.some(
-        (r) => r.plan_status === "paid" || r.plan_status === "processing",
-      );
+      const anyPaid = false;
       return {
         id: p.id,
         fullName: p.full_name,
