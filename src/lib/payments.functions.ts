@@ -101,15 +101,16 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
     if (error) throw error;
     if (!payment) return null;
 
-    let roadmap: { plan_status: string; unlocked_at: string | null } | null = null;
+    type RoadmapInfo = { plan_status: string; unlocked_at: string | null };
+    let roadmap: RoadmapInfo | null = null;
     if (payment.assessment_id) {
-      const { data } = await supabase
+      const { data: rm } = await supabase
         .from("neurodevelopment_roadmaps")
         .select("plan_status, unlocked_at")
         .eq("patient_id", payment.patient_id)
         .eq("assessment_id", payment.assessment_id)
         .maybeSingle();
-      roadmap = data as typeof roadmap;
+      roadmap = (rm as RoadmapInfo | null) ?? null;
     }
 
     return {
