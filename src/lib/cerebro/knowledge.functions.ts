@@ -74,27 +74,38 @@ export const importKnowledgeCsv = createServerFn({ method: "POST" })
       version: data.version,
     }));
 
-    // Insert in chunks to keep payloads reasonable.
-    const chunkSize = 200;
+    // Insert in chunks. On unique_violation (23505) from the dedupe partial
+    // index, retry the chunk row-by-row so duplicates are skipped silently.
+    const chunkSize = 100;
     let inserted = 0;
-    for (let i = 0; i < payload.length; i += chunkSize) {
-      const chunk = payload.slice(i, i + chunkSize);
+    let skipped = 0;
+    const insertChunk = async (chunk: typeof payload) => {
       const { data: rows, error } = await context.supabase
         .from("knowledge_documents")
-        .upsert(chunk, {
-          onConflict:
-            "module,subcategory,severity_level,behavioral_condition",
-          ignoreDuplicates: true,
-        })
+        .insert(chunk)
         .select("id");
-      if (error) throw error;
-      inserted += rows?.length ?? 0;
+      if (!error) {
+        inserted += rows?.length ?? 0;
+        return;
+      }
+      if (error.code !== "23505") throw error;
+      for (const r of chunk) {
+        const { error: rowErr } = await context.supabase
+          .from("knowledge_documents")
+          .insert(r);
+        if (!rowErr) inserted += 1;
+        else if (rowErr.code === "23505") skipped += 1;
+        else throw rowErr;
+      }
+    };
+    for (let i = 0; i < payload.length; i += chunkSize) {
+      await insertChunk(payload.slice(i, i + chunkSize));
     }
 
     return {
       requested: data.rows.length,
       inserted,
-      skipped: data.rows.length - inserted,
+      skipped,
       mode: data.mode,
       version: data.version,
     };
