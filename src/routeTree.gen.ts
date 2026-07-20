@@ -34,13 +34,21 @@ import { Route as AuthenticatedAppHojaDeRutaRouteImport } from './routes/_authen
 import { Route as AuthenticatedAppFichaRouteImport } from './routes/_authenticated/app.ficha'
 import { Route as AuthenticatedAppEvaluacionesRouteImport } from './routes/_authenticated/app.evaluaciones'
 import { Route as AuthenticatedAppEvaluacionRouteImport } from './routes/_authenticated/app.evaluacion'
+import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as AuthenticatedAppAdminIndexRouteImport } from './routes/_authenticated/app.admin.index'
 import { Route as AuthenticatedAppPlanPatientIdRouteImport } from './routes/_authenticated/app.plan.$patientId'
 import { Route as AuthenticatedAppPacientesPatientIdRouteImport } from './routes/_authenticated/app.pacientes.$patientId'
+import { Route as AuthenticatedAppAdminPagosRouteImport } from './routes/_authenticated/app.admin.pagos'
+import { Route as AuthenticatedAppAdminPacientesRouteImport } from './routes/_authenticated/app.admin.pacientes'
 import { Route as AuthenticatedAppAdminManualRouteImport } from './routes/_authenticated/app.admin.manual'
+import { Route as AuthenticatedAppAdminHojasDeRutaRouteImport } from './routes/_authenticated/app.admin.hojas-de-ruta'
+import { Route as AuthenticatedAppAdminFamiliasRouteImport } from './routes/_authenticated/app.admin.familias'
+import { Route as AuthenticatedAppAdminEvaluacionesRouteImport } from './routes/_authenticated/app.admin.evaluaciones'
 import { Route as AuthenticatedAppAdminCerebroRouteImport } from './routes/_authenticated/app.admin.cerebro'
 import { Route as AuthenticatedAppPlanPatientIdVerRouteImport } from './routes/_authenticated/app.plan.$patientId.ver'
+import { Route as AuthenticatedAppAdminPacientesPatientIdRouteImport } from './routes/_authenticated/app.admin.pacientes.$patientId'
 
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
@@ -175,6 +183,11 @@ const AuthenticatedAppEvaluacionRoute =
     path: '/evaluacion',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppAdminRoute = AuthenticatedAppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -186,6 +199,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAppAdminIndexRoute =
+  AuthenticatedAppAdminIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
 const AuthenticatedAppPlanPatientIdRoute =
   AuthenticatedAppPlanPatientIdRouteImport.update({
     id: '/plan/$patientId',
@@ -198,23 +217,59 @@ const AuthenticatedAppPacientesPatientIdRoute =
     path: '/$patientId',
     getParentRoute: () => AuthenticatedAppPacientesRoute,
   } as any)
+const AuthenticatedAppAdminPagosRoute =
+  AuthenticatedAppAdminPagosRouteImport.update({
+    id: '/pagos',
+    path: '/pagos',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
+const AuthenticatedAppAdminPacientesRoute =
+  AuthenticatedAppAdminPacientesRouteImport.update({
+    id: '/pacientes',
+    path: '/pacientes',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
 const AuthenticatedAppAdminManualRoute =
   AuthenticatedAppAdminManualRouteImport.update({
-    id: '/admin/manual',
-    path: '/admin/manual',
-    getParentRoute: () => AuthenticatedAppRoute,
+    id: '/manual',
+    path: '/manual',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
+const AuthenticatedAppAdminHojasDeRutaRoute =
+  AuthenticatedAppAdminHojasDeRutaRouteImport.update({
+    id: '/hojas-de-ruta',
+    path: '/hojas-de-ruta',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
+const AuthenticatedAppAdminFamiliasRoute =
+  AuthenticatedAppAdminFamiliasRouteImport.update({
+    id: '/familias',
+    path: '/familias',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
+const AuthenticatedAppAdminEvaluacionesRoute =
+  AuthenticatedAppAdminEvaluacionesRouteImport.update({
+    id: '/evaluaciones',
+    path: '/evaluaciones',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
   } as any)
 const AuthenticatedAppAdminCerebroRoute =
   AuthenticatedAppAdminCerebroRouteImport.update({
-    id: '/admin/cerebro',
-    path: '/admin/cerebro',
-    getParentRoute: () => AuthenticatedAppRoute,
+    id: '/cerebro',
+    path: '/cerebro',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
   } as any)
 const AuthenticatedAppPlanPatientIdVerRoute =
   AuthenticatedAppPlanPatientIdVerRouteImport.update({
     id: '/ver',
     path: '/ver',
     getParentRoute: () => AuthenticatedAppPlanPatientIdRoute,
+  } as any)
+const AuthenticatedAppAdminPacientesPatientIdRoute =
+  AuthenticatedAppAdminPacientesPatientIdRouteImport.update({
+    id: '/$patientId',
+    path: '/$patientId',
+    getParentRoute: () => AuthenticatedAppAdminPacientesRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -231,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/checkout/return': typeof CheckoutReturnRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/app/admin': typeof AuthenticatedAppAdminRouteWithChildren
   '/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
   '/app/evaluaciones': typeof AuthenticatedAppEvaluacionesRoute
   '/app/ficha': typeof AuthenticatedAppFichaRoute
@@ -245,9 +301,16 @@ export interface FileRoutesByFullPath {
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
+  '/app/admin/evaluaciones': typeof AuthenticatedAppAdminEvaluacionesRoute
+  '/app/admin/familias': typeof AuthenticatedAppAdminFamiliasRoute
+  '/app/admin/hojas-de-ruta': typeof AuthenticatedAppAdminHojasDeRutaRoute
   '/app/admin/manual': typeof AuthenticatedAppAdminManualRoute
+  '/app/admin/pacientes': typeof AuthenticatedAppAdminPacientesRouteWithChildren
+  '/app/admin/pagos': typeof AuthenticatedAppAdminPagosRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
   '/app/plan/$patientId': typeof AuthenticatedAppPlanPatientIdRouteWithChildren
+  '/app/admin/': typeof AuthenticatedAppAdminIndexRoute
+  '/app/admin/pacientes/$patientId': typeof AuthenticatedAppAdminPacientesPatientIdRoute
   '/app/plan/$patientId/ver': typeof AuthenticatedAppPlanPatientIdVerRoute
 }
 export interface FileRoutesByTo {
@@ -277,9 +340,16 @@ export interface FileRoutesByTo {
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
+  '/app/admin/evaluaciones': typeof AuthenticatedAppAdminEvaluacionesRoute
+  '/app/admin/familias': typeof AuthenticatedAppAdminFamiliasRoute
+  '/app/admin/hojas-de-ruta': typeof AuthenticatedAppAdminHojasDeRutaRoute
   '/app/admin/manual': typeof AuthenticatedAppAdminManualRoute
+  '/app/admin/pacientes': typeof AuthenticatedAppAdminPacientesRouteWithChildren
+  '/app/admin/pagos': typeof AuthenticatedAppAdminPagosRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
   '/app/plan/$patientId': typeof AuthenticatedAppPlanPatientIdRouteWithChildren
+  '/app/admin': typeof AuthenticatedAppAdminIndexRoute
+  '/app/admin/pacientes/$patientId': typeof AuthenticatedAppAdminPacientesPatientIdRoute
   '/app/plan/$patientId/ver': typeof AuthenticatedAppPlanPatientIdVerRoute
 }
 export interface FileRoutesById {
@@ -298,6 +368,7 @@ export interface FileRoutesById {
   '/checkout/return': typeof CheckoutReturnRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/app/admin': typeof AuthenticatedAppAdminRouteWithChildren
   '/_authenticated/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
   '/_authenticated/app/evaluaciones': typeof AuthenticatedAppEvaluacionesRoute
   '/_authenticated/app/ficha': typeof AuthenticatedAppFichaRoute
@@ -312,9 +383,16 @@ export interface FileRoutesById {
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
+  '/_authenticated/app/admin/evaluaciones': typeof AuthenticatedAppAdminEvaluacionesRoute
+  '/_authenticated/app/admin/familias': typeof AuthenticatedAppAdminFamiliasRoute
+  '/_authenticated/app/admin/hojas-de-ruta': typeof AuthenticatedAppAdminHojasDeRutaRoute
   '/_authenticated/app/admin/manual': typeof AuthenticatedAppAdminManualRoute
+  '/_authenticated/app/admin/pacientes': typeof AuthenticatedAppAdminPacientesRouteWithChildren
+  '/_authenticated/app/admin/pagos': typeof AuthenticatedAppAdminPagosRoute
   '/_authenticated/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
   '/_authenticated/app/plan/$patientId': typeof AuthenticatedAppPlanPatientIdRouteWithChildren
+  '/_authenticated/app/admin/': typeof AuthenticatedAppAdminIndexRoute
+  '/_authenticated/app/admin/pacientes/$patientId': typeof AuthenticatedAppAdminPacientesPatientIdRoute
   '/_authenticated/app/plan/$patientId/ver': typeof AuthenticatedAppPlanPatientIdVerRoute
 }
 export interface FileRouteTypes {
@@ -333,6 +411,7 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/app/admin'
     | '/app/evaluacion'
     | '/app/evaluaciones'
     | '/app/ficha'
@@ -347,9 +426,16 @@ export interface FileRouteTypes {
     | '/api/public/wompi-webhook'
     | '/app/'
     | '/app/admin/cerebro'
+    | '/app/admin/evaluaciones'
+    | '/app/admin/familias'
+    | '/app/admin/hojas-de-ruta'
     | '/app/admin/manual'
+    | '/app/admin/pacientes'
+    | '/app/admin/pagos'
     | '/app/pacientes/$patientId'
     | '/app/plan/$patientId'
+    | '/app/admin/'
+    | '/app/admin/pacientes/$patientId'
     | '/app/plan/$patientId/ver'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -379,9 +465,16 @@ export interface FileRouteTypes {
     | '/api/public/wompi-webhook'
     | '/app'
     | '/app/admin/cerebro'
+    | '/app/admin/evaluaciones'
+    | '/app/admin/familias'
+    | '/app/admin/hojas-de-ruta'
     | '/app/admin/manual'
+    | '/app/admin/pacientes'
+    | '/app/admin/pagos'
     | '/app/pacientes/$patientId'
     | '/app/plan/$patientId'
+    | '/app/admin'
+    | '/app/admin/pacientes/$patientId'
     | '/app/plan/$patientId/ver'
   id:
     | '__root__'
@@ -399,6 +492,7 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/app/admin'
     | '/_authenticated/app/evaluacion'
     | '/_authenticated/app/evaluaciones'
     | '/_authenticated/app/ficha'
@@ -413,9 +507,16 @@ export interface FileRouteTypes {
     | '/api/public/wompi-webhook'
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/cerebro'
+    | '/_authenticated/app/admin/evaluaciones'
+    | '/_authenticated/app/admin/familias'
+    | '/_authenticated/app/admin/hojas-de-ruta'
     | '/_authenticated/app/admin/manual'
+    | '/_authenticated/app/admin/pacientes'
+    | '/_authenticated/app/admin/pagos'
     | '/_authenticated/app/pacientes/$patientId'
     | '/_authenticated/app/plan/$patientId'
+    | '/_authenticated/app/admin/'
+    | '/_authenticated/app/admin/pacientes/$patientId'
     | '/_authenticated/app/plan/$patientId/ver'
   fileRoutesById: FileRoutesById
 }
@@ -610,6 +711,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppEvaluacionRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/admin': {
+      id: '/_authenticated/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AuthenticatedAppAdminRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -623,6 +731,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/.lovable/oauth/consent'
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/app/admin/': {
+      id: '/_authenticated/app/admin/'
+      path: '/'
+      fullPath: '/app/admin/'
+      preLoaderRoute: typeof AuthenticatedAppAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
     }
     '/_authenticated/app/plan/$patientId': {
       id: '/_authenticated/app/plan/$patientId'
@@ -638,19 +753,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPacientesPatientIdRouteImport
       parentRoute: typeof AuthenticatedAppPacientesRoute
     }
+    '/_authenticated/app/admin/pagos': {
+      id: '/_authenticated/app/admin/pagos'
+      path: '/pagos'
+      fullPath: '/app/admin/pagos'
+      preLoaderRoute: typeof AuthenticatedAppAdminPagosRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/admin/pacientes': {
+      id: '/_authenticated/app/admin/pacientes'
+      path: '/pacientes'
+      fullPath: '/app/admin/pacientes'
+      preLoaderRoute: typeof AuthenticatedAppAdminPacientesRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
     '/_authenticated/app/admin/manual': {
       id: '/_authenticated/app/admin/manual'
-      path: '/admin/manual'
+      path: '/manual'
       fullPath: '/app/admin/manual'
       preLoaderRoute: typeof AuthenticatedAppAdminManualRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/admin/hojas-de-ruta': {
+      id: '/_authenticated/app/admin/hojas-de-ruta'
+      path: '/hojas-de-ruta'
+      fullPath: '/app/admin/hojas-de-ruta'
+      preLoaderRoute: typeof AuthenticatedAppAdminHojasDeRutaRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/admin/familias': {
+      id: '/_authenticated/app/admin/familias'
+      path: '/familias'
+      fullPath: '/app/admin/familias'
+      preLoaderRoute: typeof AuthenticatedAppAdminFamiliasRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/admin/evaluaciones': {
+      id: '/_authenticated/app/admin/evaluaciones'
+      path: '/evaluaciones'
+      fullPath: '/app/admin/evaluaciones'
+      preLoaderRoute: typeof AuthenticatedAppAdminEvaluacionesRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
     }
     '/_authenticated/app/admin/cerebro': {
       id: '/_authenticated/app/admin/cerebro'
-      path: '/admin/cerebro'
+      path: '/cerebro'
       fullPath: '/app/admin/cerebro'
       preLoaderRoute: typeof AuthenticatedAppAdminCerebroRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
+      parentRoute: typeof AuthenticatedAppAdminRoute
     }
     '/_authenticated/app/plan/$patientId/ver': {
       id: '/_authenticated/app/plan/$patientId/ver'
@@ -659,8 +809,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPlanPatientIdVerRouteImport
       parentRoute: typeof AuthenticatedAppPlanPatientIdRoute
     }
+    '/_authenticated/app/admin/pacientes/$patientId': {
+      id: '/_authenticated/app/admin/pacientes/$patientId'
+      path: '/$patientId'
+      fullPath: '/app/admin/pacientes/$patientId'
+      preLoaderRoute: typeof AuthenticatedAppAdminPacientesPatientIdRouteImport
+      parentRoute: typeof AuthenticatedAppAdminPacientesRoute
+    }
   }
 }
+
+interface AuthenticatedAppAdminPacientesRouteChildren {
+  AuthenticatedAppAdminPacientesPatientIdRoute: typeof AuthenticatedAppAdminPacientesPatientIdRoute
+}
+
+const AuthenticatedAppAdminPacientesRouteChildren: AuthenticatedAppAdminPacientesRouteChildren =
+  {
+    AuthenticatedAppAdminPacientesPatientIdRoute:
+      AuthenticatedAppAdminPacientesPatientIdRoute,
+  }
+
+const AuthenticatedAppAdminPacientesRouteWithChildren =
+  AuthenticatedAppAdminPacientesRoute._addFileChildren(
+    AuthenticatedAppAdminPacientesRouteChildren,
+  )
+
+interface AuthenticatedAppAdminRouteChildren {
+  AuthenticatedAppAdminCerebroRoute: typeof AuthenticatedAppAdminCerebroRoute
+  AuthenticatedAppAdminEvaluacionesRoute: typeof AuthenticatedAppAdminEvaluacionesRoute
+  AuthenticatedAppAdminFamiliasRoute: typeof AuthenticatedAppAdminFamiliasRoute
+  AuthenticatedAppAdminHojasDeRutaRoute: typeof AuthenticatedAppAdminHojasDeRutaRoute
+  AuthenticatedAppAdminManualRoute: typeof AuthenticatedAppAdminManualRoute
+  AuthenticatedAppAdminPacientesRoute: typeof AuthenticatedAppAdminPacientesRouteWithChildren
+  AuthenticatedAppAdminPagosRoute: typeof AuthenticatedAppAdminPagosRoute
+  AuthenticatedAppAdminIndexRoute: typeof AuthenticatedAppAdminIndexRoute
+}
+
+const AuthenticatedAppAdminRouteChildren: AuthenticatedAppAdminRouteChildren = {
+  AuthenticatedAppAdminCerebroRoute: AuthenticatedAppAdminCerebroRoute,
+  AuthenticatedAppAdminEvaluacionesRoute:
+    AuthenticatedAppAdminEvaluacionesRoute,
+  AuthenticatedAppAdminFamiliasRoute: AuthenticatedAppAdminFamiliasRoute,
+  AuthenticatedAppAdminHojasDeRutaRoute: AuthenticatedAppAdminHojasDeRutaRoute,
+  AuthenticatedAppAdminManualRoute: AuthenticatedAppAdminManualRoute,
+  AuthenticatedAppAdminPacientesRoute:
+    AuthenticatedAppAdminPacientesRouteWithChildren,
+  AuthenticatedAppAdminPagosRoute: AuthenticatedAppAdminPagosRoute,
+  AuthenticatedAppAdminIndexRoute: AuthenticatedAppAdminIndexRoute,
+}
+
+const AuthenticatedAppAdminRouteWithChildren =
+  AuthenticatedAppAdminRoute._addFileChildren(
+    AuthenticatedAppAdminRouteChildren,
+  )
 
 interface AuthenticatedAppPacientesRouteChildren {
   AuthenticatedAppPacientesPatientIdRoute: typeof AuthenticatedAppPacientesPatientIdRoute
@@ -693,6 +894,7 @@ const AuthenticatedAppPlanPatientIdRouteWithChildren =
   )
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAdminRoute: typeof AuthenticatedAppAdminRouteWithChildren
   AuthenticatedAppEvaluacionRoute: typeof AuthenticatedAppEvaluacionRoute
   AuthenticatedAppEvaluacionesRoute: typeof AuthenticatedAppEvaluacionesRoute
   AuthenticatedAppFichaRoute: typeof AuthenticatedAppFichaRoute
@@ -705,12 +907,11 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppPlanInteractivoRoute: typeof AuthenticatedAppPlanInteractivoRoute
   AuthenticatedAppSeguimientoRoute: typeof AuthenticatedAppSeguimientoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
-  AuthenticatedAppAdminCerebroRoute: typeof AuthenticatedAppAdminCerebroRoute
-  AuthenticatedAppAdminManualRoute: typeof AuthenticatedAppAdminManualRoute
   AuthenticatedAppPlanPatientIdRoute: typeof AuthenticatedAppPlanPatientIdRouteWithChildren
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAdminRoute: AuthenticatedAppAdminRouteWithChildren,
   AuthenticatedAppEvaluacionRoute: AuthenticatedAppEvaluacionRoute,
   AuthenticatedAppEvaluacionesRoute: AuthenticatedAppEvaluacionesRoute,
   AuthenticatedAppFichaRoute: AuthenticatedAppFichaRoute,
@@ -723,8 +924,6 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppPlanInteractivoRoute: AuthenticatedAppPlanInteractivoRoute,
   AuthenticatedAppSeguimientoRoute: AuthenticatedAppSeguimientoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
-  AuthenticatedAppAdminCerebroRoute: AuthenticatedAppAdminCerebroRoute,
-  AuthenticatedAppAdminManualRoute: AuthenticatedAppAdminManualRoute,
   AuthenticatedAppPlanPatientIdRoute:
     AuthenticatedAppPlanPatientIdRouteWithChildren,
 }
