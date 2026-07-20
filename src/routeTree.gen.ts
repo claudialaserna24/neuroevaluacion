@@ -23,10 +23,16 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as ApiPublicWompiWebhookRouteImport } from './routes/api/public/wompi-webhook'
+import { Route as AuthenticatedAppSeguimientoRouteImport } from './routes/_authenticated/app.seguimiento'
 import { Route as AuthenticatedAppPlanInteractivoRouteImport } from './routes/_authenticated/app.plan-interactivo'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
 import { Route as AuthenticatedAppPacientesRouteImport } from './routes/_authenticated/app.pacientes'
+import { Route as AuthenticatedAppMiPlanRouteImport } from './routes/_authenticated/app.mi-plan'
+import { Route as AuthenticatedAppManualRouteImport } from './routes/_authenticated/app.manual'
 import { Route as AuthenticatedAppInformeRouteImport } from './routes/_authenticated/app.informe'
+import { Route as AuthenticatedAppHojaDeRutaRouteImport } from './routes/_authenticated/app.hoja-de-ruta'
+import { Route as AuthenticatedAppFichaRouteImport } from './routes/_authenticated/app.ficha'
+import { Route as AuthenticatedAppEvaluacionesRouteImport } from './routes/_authenticated/app.evaluaciones'
 import { Route as AuthenticatedAppEvaluacionRouteImport } from './routes/_authenticated/app.evaluacion'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -108,6 +114,12 @@ const ApiPublicWompiWebhookRoute = ApiPublicWompiWebhookRouteImport.update({
   path: '/api/public/wompi-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAppSeguimientoRoute =
+  AuthenticatedAppSeguimientoRouteImport.update({
+    id: '/seguimiento',
+    path: '/seguimiento',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppPlanInteractivoRoute =
   AuthenticatedAppPlanInteractivoRouteImport.update({
     id: '/plan-interactivo',
@@ -125,11 +137,38 @@ const AuthenticatedAppPacientesRoute =
     path: '/pacientes',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppMiPlanRoute = AuthenticatedAppMiPlanRouteImport.update({
+  id: '/mi-plan',
+  path: '/mi-plan',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppManualRoute = AuthenticatedAppManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppInformeRoute = AuthenticatedAppInformeRouteImport.update({
   id: '/informe',
   path: '/informe',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppHojaDeRutaRoute =
+  AuthenticatedAppHojaDeRutaRouteImport.update({
+    id: '/hoja-de-ruta',
+    path: '/hoja-de-ruta',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppFichaRoute = AuthenticatedAppFichaRouteImport.update({
+  id: '/ficha',
+  path: '/ficha',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppEvaluacionesRoute =
+  AuthenticatedAppEvaluacionesRouteImport.update({
+    id: '/evaluaciones',
+    path: '/evaluaciones',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppEvaluacionRoute =
   AuthenticatedAppEvaluacionRouteImport.update({
     id: '/evaluacion',
@@ -193,10 +232,16 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
+  '/app/evaluaciones': typeof AuthenticatedAppEvaluacionesRoute
+  '/app/ficha': typeof AuthenticatedAppFichaRoute
+  '/app/hoja-de-ruta': typeof AuthenticatedAppHojaDeRutaRoute
   '/app/informe': typeof AuthenticatedAppInformeRoute
+  '/app/manual': typeof AuthenticatedAppManualRoute
+  '/app/mi-plan': typeof AuthenticatedAppMiPlanRoute
   '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
+  '/app/seguimiento': typeof AuthenticatedAppSeguimientoRoute
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
@@ -219,10 +264,16 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
+  '/app/evaluaciones': typeof AuthenticatedAppEvaluacionesRoute
+  '/app/ficha': typeof AuthenticatedAppFichaRoute
+  '/app/hoja-de-ruta': typeof AuthenticatedAppHojaDeRutaRoute
   '/app/informe': typeof AuthenticatedAppInformeRoute
+  '/app/manual': typeof AuthenticatedAppManualRoute
+  '/app/mi-plan': typeof AuthenticatedAppMiPlanRoute
   '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
+  '/app/seguimiento': typeof AuthenticatedAppSeguimientoRoute
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
@@ -248,10 +299,16 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
+  '/_authenticated/app/evaluaciones': typeof AuthenticatedAppEvaluacionesRoute
+  '/_authenticated/app/ficha': typeof AuthenticatedAppFichaRoute
+  '/_authenticated/app/hoja-de-ruta': typeof AuthenticatedAppHojaDeRutaRoute
   '/_authenticated/app/informe': typeof AuthenticatedAppInformeRoute
+  '/_authenticated/app/manual': typeof AuthenticatedAppManualRoute
+  '/_authenticated/app/mi-plan': typeof AuthenticatedAppMiPlanRoute
   '/_authenticated/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
+  '/_authenticated/app/seguimiento': typeof AuthenticatedAppSeguimientoRoute
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
@@ -277,10 +334,16 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/evaluacion'
+    | '/app/evaluaciones'
+    | '/app/ficha'
+    | '/app/hoja-de-ruta'
     | '/app/informe'
+    | '/app/manual'
+    | '/app/mi-plan'
     | '/app/pacientes'
     | '/app/perfil'
     | '/app/plan-interactivo'
+    | '/app/seguimiento'
     | '/api/public/wompi-webhook'
     | '/app/'
     | '/app/admin/cerebro'
@@ -303,10 +366,16 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/evaluacion'
+    | '/app/evaluaciones'
+    | '/app/ficha'
+    | '/app/hoja-de-ruta'
     | '/app/informe'
+    | '/app/manual'
+    | '/app/mi-plan'
     | '/app/pacientes'
     | '/app/perfil'
     | '/app/plan-interactivo'
+    | '/app/seguimiento'
     | '/api/public/wompi-webhook'
     | '/app'
     | '/app/admin/cerebro'
@@ -331,10 +400,16 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/app/evaluacion'
+    | '/_authenticated/app/evaluaciones'
+    | '/_authenticated/app/ficha'
+    | '/_authenticated/app/hoja-de-ruta'
     | '/_authenticated/app/informe'
+    | '/_authenticated/app/manual'
+    | '/_authenticated/app/mi-plan'
     | '/_authenticated/app/pacientes'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/plan-interactivo'
+    | '/_authenticated/app/seguimiento'
     | '/api/public/wompi-webhook'
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/cerebro'
@@ -458,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWompiWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/app/seguimiento': {
+      id: '/_authenticated/app/seguimiento'
+      path: '/seguimiento'
+      fullPath: '/app/seguimiento'
+      preLoaderRoute: typeof AuthenticatedAppSeguimientoRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/plan-interactivo': {
       id: '/_authenticated/app/plan-interactivo'
       path: '/plan-interactivo'
@@ -479,11 +561,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPacientesRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/mi-plan': {
+      id: '/_authenticated/app/mi-plan'
+      path: '/mi-plan'
+      fullPath: '/app/mi-plan'
+      preLoaderRoute: typeof AuthenticatedAppMiPlanRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/manual': {
+      id: '/_authenticated/app/manual'
+      path: '/manual'
+      fullPath: '/app/manual'
+      preLoaderRoute: typeof AuthenticatedAppManualRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/informe': {
       id: '/_authenticated/app/informe'
       path: '/informe'
       fullPath: '/app/informe'
       preLoaderRoute: typeof AuthenticatedAppInformeRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/hoja-de-ruta': {
+      id: '/_authenticated/app/hoja-de-ruta'
+      path: '/hoja-de-ruta'
+      fullPath: '/app/hoja-de-ruta'
+      preLoaderRoute: typeof AuthenticatedAppHojaDeRutaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/ficha': {
+      id: '/_authenticated/app/ficha'
+      path: '/ficha'
+      fullPath: '/app/ficha'
+      preLoaderRoute: typeof AuthenticatedAppFichaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/evaluaciones': {
+      id: '/_authenticated/app/evaluaciones'
+      path: '/evaluaciones'
+      fullPath: '/app/evaluaciones'
+      preLoaderRoute: typeof AuthenticatedAppEvaluacionesRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/evaluacion': {
@@ -577,10 +694,16 @@ const AuthenticatedAppPlanPatientIdRouteWithChildren =
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppEvaluacionRoute: typeof AuthenticatedAppEvaluacionRoute
+  AuthenticatedAppEvaluacionesRoute: typeof AuthenticatedAppEvaluacionesRoute
+  AuthenticatedAppFichaRoute: typeof AuthenticatedAppFichaRoute
+  AuthenticatedAppHojaDeRutaRoute: typeof AuthenticatedAppHojaDeRutaRoute
   AuthenticatedAppInformeRoute: typeof AuthenticatedAppInformeRoute
+  AuthenticatedAppManualRoute: typeof AuthenticatedAppManualRoute
+  AuthenticatedAppMiPlanRoute: typeof AuthenticatedAppMiPlanRoute
   AuthenticatedAppPacientesRoute: typeof AuthenticatedAppPacientesRouteWithChildren
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppPlanInteractivoRoute: typeof AuthenticatedAppPlanInteractivoRoute
+  AuthenticatedAppSeguimientoRoute: typeof AuthenticatedAppSeguimientoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppAdminCerebroRoute: typeof AuthenticatedAppAdminCerebroRoute
   AuthenticatedAppAdminManualRoute: typeof AuthenticatedAppAdminManualRoute
@@ -589,10 +712,16 @@ interface AuthenticatedAppRouteChildren {
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppEvaluacionRoute: AuthenticatedAppEvaluacionRoute,
+  AuthenticatedAppEvaluacionesRoute: AuthenticatedAppEvaluacionesRoute,
+  AuthenticatedAppFichaRoute: AuthenticatedAppFichaRoute,
+  AuthenticatedAppHojaDeRutaRoute: AuthenticatedAppHojaDeRutaRoute,
   AuthenticatedAppInformeRoute: AuthenticatedAppInformeRoute,
+  AuthenticatedAppManualRoute: AuthenticatedAppManualRoute,
+  AuthenticatedAppMiPlanRoute: AuthenticatedAppMiPlanRoute,
   AuthenticatedAppPacientesRoute: AuthenticatedAppPacientesRouteWithChildren,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppPlanInteractivoRoute: AuthenticatedAppPlanInteractivoRoute,
+  AuthenticatedAppSeguimientoRoute: AuthenticatedAppSeguimientoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppAdminCerebroRoute: AuthenticatedAppAdminCerebroRoute,
   AuthenticatedAppAdminManualRoute: AuthenticatedAppAdminManualRoute,
