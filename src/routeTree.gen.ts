@@ -13,6 +13,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedConsentimientoRouteImport } from './routes/_authenticated/consentimiento'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
@@ -47,6 +48,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
@@ -148,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/consentimiento': typeof AuthenticatedConsentimientoRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/consentimiento': typeof AuthenticatedConsentimientoRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/_authenticated/consentimiento': typeof AuthenticatedConsentimientoRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/app/evaluacion': typeof AuthenticatedAppEvaluacionRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/consentimiento'
     | '/onboarding'
+    | '/checkout/return'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/evaluacion'
@@ -234,6 +244,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/consentimiento'
     | '/onboarding'
+    | '/checkout/return'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/evaluacion'
@@ -256,6 +267,7 @@ export interface FileRouteTypes {
     | '/_authenticated/checkout'
     | '/_authenticated/consentimiento'
     | '/_authenticated/onboarding'
+    | '/checkout/return'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/app/evaluacion'
@@ -275,6 +287,7 @@ export interface RootRouteChildren {
   McpRoute: typeof McpRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  CheckoutReturnRoute: typeof CheckoutReturnRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicWompiWebhookRoute: typeof ApiPublicWompiWebhookRoute
@@ -308,6 +321,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/onboarding': {
@@ -486,6 +506,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  CheckoutReturnRoute: CheckoutReturnRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicWompiWebhookRoute: ApiPublicWompiWebhookRoute,
