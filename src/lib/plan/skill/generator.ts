@@ -1,4 +1,5 @@
 import { generateText, NoObjectGeneratedError, Output } from "ai";
+import type { Json } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { PlanContentSchema, type PlanContent } from "./schema";
@@ -154,10 +155,10 @@ export async function generateInteractivePlan(
         output: Output.object({ schema: PlanContentSchema }),
       });
       planContent = output as PlanContent;
-    } catch (error) {
+    } catch (error: unknown) {
       if (NoObjectGeneratedError.isInstance(error)) {
         try {
-          const parsed = JSON.parse(error.text ?? "{}");
+          const parsed = JSON.parse((error as { text?: string }).text ?? "{}");
           const safe = PlanContentSchema.safeParse(parsed);
           if (safe.success) planContent = safe.data;
         } catch {
@@ -183,7 +184,7 @@ export async function generateInteractivePlan(
     await supabaseAdmin
       .from("neurodevelopment_roadmaps")
       .update({
-        plan_content: planContent as unknown as Record<string, unknown>,
+        plan_content: planContent as unknown as Json,
         plan_generation_status: "ready",
         plan_generated_at: new Date().toISOString(),
       })
