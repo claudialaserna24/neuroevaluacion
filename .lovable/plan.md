@@ -1,80 +1,133 @@
+# Experiencia de compra y preparación del Checkout
 
-# Refinamiento UX — Módulo de Evaluación
+Precio: **USD $80** (moneda `USD`). Wompi se integrará en un módulo posterior; por ahora solo se prepara la estructura.
 
-No se toca el motor de evaluación, preguntas, escalas, cálculo, almacenamiento, autoguardado ni la Hoja de Ruta. Solo capas de UX y navegación.
+No se toca la Evaluación, la Hoja de Ruta (contenido) ni el Dashboard.
 
-## 1. Pantallas de introducción por módulo (una vez por módulo)
+## 1. Modal de confirmación en la Hoja de Ruta
 
-En `src/routes/_authenticated/app.evaluacion.tsx`:
+Archivo: `src/routes/_authenticated/app.informe.tsx`.
 
-- Añadir estado `moduleIntroShown: { cognitive: boolean; functional: boolean; reflex: boolean }`.
-- Persistir por paciente en `localStorage` con clave `neuroplan.moduleIntro.<patientId>` para que sobreviva a recargas, pero se muestre una sola vez por módulo por paciente.
-- Antes de renderizar la primera pregunta cuyo `module` aún no fue introducido, mostrar una pantalla intersticial a pantalla completa dentro del mismo layout con:
-  - Título en serif (`font-serif text-2xl`)
-  - Párrafo(s) explicativos y viñetas de escalas
-  - Botón CTA ("Comenzar" o "Continuar" según el copy indicado)
-- Al hacer clic en el CTA, se marca el módulo como introducido y se muestra la pregunta.
-- La detección se hace por el `module` de `currentQ` — si cambia entre pregunta N y N+1 (transición entre módulos), se dispara la intro del nuevo módulo automáticamente.
+- Reemplazar el `<Link to="/checkout">` del botón "Desbloquear mi Plan Interactivo" por un `<button>` que abra un modal controlado con `useState`.
+- El "Conocer todo lo que incluye" mantiene su función, pero también se puede abrir desde el modal.
+- Modal:
+  - Overlay con `backdrop-blur-sm bg-background/60` sobre la Hoja de Ruta.
+  - Tarjeta central `rounded-3xl bg-card p-6 max-w-lg` con sombra y ring institucional.
+  - Cierre con botón `X`, `Esc` y clic fuera.
+  - Contenido literal solicitado:
+    - Título serif: *"Estás a un paso de comenzar el acompañamiento personalizado de tu hijo."*
+    - Párrafos introductorios exactos.
+    - Lista de 7 beneficios con iconos discretos de Lucide (`CheckCircle2`, `CalendarDays`, `FileDown`, `Bot`, `MessagesSquare`, `Users`, `History`).
+    - Bloque destacado **"¿Qué lograrás con este plan?"** con los 3 mensajes de resultado (recomendación adicional del brief).
+    - Nota clínica en `text-xs text-muted-foreground`.
+  - Botones:
+    - Principal `Continuar al pago` → cierra modal y navega a `/checkout?patient=<id>`.
+    - Secundario `Conocer mi Plan` → cierra modal y navega a `/app/plan-interactivo?patient=<id>`.
+- Accesibilidad: `role="dialog" aria-modal="true"`, focus trap básico, `aria-labelledby`.
 
-Copys exactos según lo entregado por el usuario para Perfil Cognitivo, Evaluación Funcional y Reflejos Primitivos.
+## 2. Página "Conoce tu Plan Interactivo"
 
-Nota: la Evaluación Funcional actualmente usa una única escala `func10` (0–10). El copy del usuario menciona dos aspectos (Frecuencia y Nivel de compromiso). Se respetará el texto tal como fue provisto en la intro; no se modifica el motor ni la estructura de preguntas. Si más adelante se requiere capturar dos valores por ítem, se abordará en otro cambio.
+Reescribir `src/routes/_authenticated/app.plan-interactivo.tsx` para reemplazar la landing actual por las secciones pedidas, manteniendo la estética (serif Fraunces, tokens, tarjetas `rounded-3xl`).
 
-## 2. Navegación durante Reflejos
+Secciones (todas en tarjetas visuales, mobile-first, con iconos Lucide):
 
-Revisar por qué desaparece "Anterior" en el módulo de reflejos. Sospecha: el `cursor === 0` funciona globalmente, pero puede haber un condicional/estilo que oculta el botón según la escala. Ajustar `app.evaluacion.tsx` para que:
+1. **Hero** — título institucional, subtítulo y CTA secundario que abre el mismo checkout al final.
+2. **Tu Plan Personalizado** — explica que se genera desde la Hoja de Ruta y la evaluación.
+3. **Actividades paso a paso** — reflejos + integración sensorial, priorizadas.
+4. **Calendario de trabajo** — frecuencia semanal.
+5. **Materiales de apoyo** — recursos descargables asociados a cada actividad.
+6. **Acompañamiento de Moholka (30 días)** — agente IA, solo consultas sobre aplicación del plan; no clínico/diagnóstico.
+7. **Membresía** — comunidad privada, encuentros grupales con la neuropsicóloga, contenido adicional.
+8. **Historial** — plan guardado, comparable con futuras reevaluaciones.
+9. **"¿Qué lograrás con este plan?"** — mismo bloque de resultados que el modal (recomendación de conversión).
+10. **CTA final** — bloque destacado con fondo `bg-gradient-to-br from-primary/10 ...`:
+  - Título: *"Comienza hoy el acompañamiento personalizado de tu hijo."*
+    - Texto solicitado.
+    - Botón `Desbloquear mi Plan Interactivo` → `/checkout?patient=<id>`.
 
-- "Anterior" sea visible y clicable durante los tres módulos siempre que `cursor > 0`.
-- Se pueda retroceder incluso entre módulos (no solo dentro del mismo).
-- Mantener la regla actual: no se puede finalizar (Generar Hoja de Ruta) hasta responder todas las preguntas — ya se cumple con `allAnswered`. No se cambia esa lógica.
+Se conserva `validateSearch` con `patient` uuid.
 
-## 3. Landing interna de venta `/plan-interactivo`
+## 3. Checkout con resumen de compra
 
-Convertir el botón "Conocer todo lo que incluye" (hoy inerte, en `app.informe.tsx`) en un enlace a una nueva ruta:
+Archivo: `src/routes/_authenticated/checkout.tsx` (reemplazar el placeholder actual).
 
-`src/routes/_authenticated/app.plan-interactivo.tsx`
+- Loader/component: cargar datos del paciente y de la última evaluación finalizada mediante server functions ya existentes (`getPatient`, `getRoadmap` o equivalente) usando `useServerFn` + `useQuery` — mismo patrón que `app.informe.tsx`. Si no existe una función que devuelva `assessmentId`, extenderé `getRoadmap` (o añadiré un helper) para exponerlo; no se cambia lógica clínica.
+- Layout de tarjeta única con dos columnas en desktop, apiladas en móvil:
+  - **Resumen de compra**
+    - "Niño/a: `<full_name>`"
+    - Producto: **Plan Interactivo NEUROPLAN**
+    - Precio: `USD $80.00`
+    - Moneda: `USD`
+    - Total: `USD $80.00`
+  - **Nota**: pago único, acceso inmediato tras confirmación.
+- Botón principal **"Pagar "** (estilo `bg-primary`, icono `Lock`). Por ahora: al hacer clic, crea un registro `payments` en estado `pending` vía server function `createPendingPayment` y muestra un toast "Integración con Wompi en preparación." — no redirige a Wompi todavía. Deja el `assessment_id`, `patient_id`, `user_id`, `amount=80`, `currency=USD` listos.
+- Botón secundario: volver a Hoja de Ruta.
 
-Contenido (mobile-first, misma estética serif/tokens actuales):
+Constante `PLAN_PRICE_USD = 80` en `src/lib/plan-pricing.ts` (nuevo, cliente-safe) para reutilizar en modal, landing y checkout.
 
-1. **Hero**: "Ya conoces las prioridades. Ahora descubre cómo acompañar a tu hijo paso a paso." + subtítulo emocional + CTA principal "Desbloquear mi Plan Interactivo".
-2. **Comparativa Hoja de Ruta (gratis) vs Plan Interactivo (completo)** — tabla/tarjetas de dos columnas mostrando qué incluye cada uno.
-3. **Recorrido visual "Qué recibirás"** — tarjetas con íconos de Lucide (sin revelar actividades específicas):
-   - Plan personalizado organizado por prioridades
-   - Actividades paso a paso
-   - Frecuencia semanal recomendada
-   - Recursos descargables
-   - Acompañamiento de Moholka durante 30 días
-   - Respuestas a preguntas relacionadas con el plan
-   - Membresía grupal con la neuropsicóloga
-   - Actualizaciones del plan cuando sea necesario
-4. **CTA final protagonista** — "Desbloquear mi Plan Interactivo" que enlaza a `/checkout?patient=<id>`.
+## 4. Backend — tabla `payments` y estado del plan
 
-Se recibe el `patient` por search param para propagarlo al checkout.
+Migración única con:
 
-## 4. Ruta temporal `/checkout`
+```sql
+CREATE TYPE public.payment_status AS ENUM ('pending','paid','failed','cancelled');
+CREATE TYPE public.plan_status AS ENUM ('locked','unlocked');
 
-`src/routes/_authenticated/checkout.tsx` (dentro del layout autenticado):
+CREATE TABLE public.payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  patient_id uuid NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+  assessment_id uuid REFERENCES public.assessments(id) ON DELETE SET NULL,
+  amount numeric(12,2) NOT NULL,
+  currency text NOT NULL DEFAULT 'USD',
+  status public.payment_status NOT NULL DEFAULT 'pending',
+  wompi_reference text UNIQUE,
+  wompi_transaction_id text,
+  paid_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE ON public.payments TO authenticated;
+GRANT ALL ON public.payments TO service_role;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 
-- Search param `patient` (uuid).
-- Pantalla simple con:
-  - Título: "Estamos preparando tu Plan Interactivo"
-  - Texto: "En el siguiente paso integrarás la pasarela de pago para desbloquear automáticamente el Plan Interactivo."
-  - Botón secundario "Volver" al informe.
-- Sin lógica de pago. Solo placeholder.
+CREATE POLICY "Users read own payments" ON public.payments
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own payments" ON public.payments
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+-- Updates de estado solo desde service_role (webhook Wompi futuro).
 
-## 5. Conexiones de botones
+CREATE TRIGGER payments_touch BEFORE UPDATE ON public.payments
+  FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 
-En `app.informe.tsx`:
-- "Conocer todo lo que incluye" → `Link to="/app/plan-interactivo" search={{ patient }}`.
-- "Desbloquear mi Plan Interactivo" → `Link to="/checkout" search={{ patient }}`.
+-- Estado del plan por evaluación
+ALTER TABLE public.neurodevelopment_roadmaps
+  ADD COLUMN IF NOT EXISTS plan_status public.plan_status NOT NULL DEFAULT 'locked',
+  ADD COLUMN IF NOT EXISTS unlocked_at timestamptz;
+```
+
+- Los cambios de `status` a `paid` (y el `plan_status → 'unlocked'` correspondiente) se harán vía service_role en el módulo Wompi; se deja preparada la columna.
+
+## 5. Server functions nuevas
+
+`src/lib/payments.functions.ts` con `requireSupabaseAuth`:
+
+- `createPendingPayment({ patientId, assessmentId })` — inserta `pending`, valida que el paciente pertenezca al `userId` (RLS lo refuerza). Devuelve `{ paymentId, reference }` donde `reference = "NP-<paymentId>"`.
+- `getPlanStatus({ patientId })` — lee `neurodevelopment_roadmaps.plan_status` de la última roadmap del paciente. Se usará más adelante.
+
+Registrar imports desde el componente `checkout.tsx` (no en loaders públicos).
 
 ## Archivos afectados
 
-- `src/routes/_authenticated/app.evaluacion.tsx` (intros + fix botón Anterior)
-- `src/routes/_authenticated/app.informe.tsx` (conectar botones existentes)
-- `src/routes/_authenticated/app.plan-interactivo.tsx` (nuevo)
-- `src/routes/_authenticated/checkout.tsx` (nuevo, placeholder)
+- `src/routes/_authenticated/app.informe.tsx` — modal de confirmación.
+- `src/routes/_authenticated/app.plan-interactivo.tsx` — rehacer landing con nuevas secciones.
+- `src/routes/_authenticated/checkout.tsx` — resumen y botón Wompi.
+- `src/lib/plan-pricing.ts` — nuevo, precio central.
+- `src/lib/payments.functions.ts` — nuevo, server fns.
+- Migración: `payments`, enums, columnas de plan en `neurodevelopment_roadmaps`.
 
 ## Fuera de alcance
 
-Motor de evaluación, preguntas, escalas, reglas, cálculos, DB, RLS, autoguardado, Hoja de Ruta, pasarela de pago real.
+- Integración real con Wompi (widget, webhook, verificación de firma).
+- Cambios en Evaluación, Hoja de Ruta (contenido), Dashboard o motor.
+- Emails transaccionales de compra.
