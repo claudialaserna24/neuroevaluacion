@@ -2,7 +2,7 @@ import { generateText, NoObjectGeneratedError, Output } from "ai";
 import type { Json } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import { PlanContentSchema, type PlanContent } from "./schema";
+import { LEGAL_NOTICE_TEXT, PlanContentSchema, type PlanContent } from "./schema";
 import { SYSTEM_PROMPT, USER_PROMPT_INSTRUCTIONS } from "./prompts";
 import {
   formatCerebroForPrompt,
@@ -218,6 +218,11 @@ export async function generateInteractivePlan(
         .update({ plan_generation_status: "failed" })
         .eq("id", roadmapId);
       return { ok: false, reason: "no_longer_unlocked" };
+    }
+
+    // Forzar aviso legal literal, sin depender del modelo.
+    if (planContent) {
+      planContent.legal_notice = { body: LEGAL_NOTICE_TEXT };
     }
 
     await supabaseAdmin
