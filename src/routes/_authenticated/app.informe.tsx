@@ -1,8 +1,25 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles, Lock, ArrowRight, Download } from "lucide-react";
+import {
+  Sparkles,
+  Lock,
+  ArrowRight,
+  Download,
+  X,
+  CheckCircle2,
+  CalendarDays,
+  FileDown,
+  Bot,
+  MessagesSquare,
+  Users,
+  History,
+  Compass,
+  ClipboardList,
+  HeartHandshake,
+} from "lucide-react";
 import { getRoadmap } from "@/lib/assessment.functions";
 import type {
   CognitiveResult,
@@ -29,6 +46,7 @@ type Report = {
 function InformePage() {
   const { patient } = Route.useSearch();
   const fetchReport = useServerFn(getRoadmap);
+  const [modalOpen, setModalOpen] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["roadmap", patient],
     queryFn: () => fetchReport({ data: { patientId: patient } }),
@@ -202,14 +220,14 @@ function InformePage() {
         </p>
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-          <Link
-            to="/checkout"
-            search={{ patient }}
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
           >
             <Lock className="h-4 w-4" />
             Desbloquear mi Plan Interactivo
-          </Link>
+          </button>
           <Link
             to="/app/plan-interactivo"
             search={{ patient }}
@@ -219,6 +237,9 @@ function InformePage() {
           </Link>
         </div>
       </section>
+      {modalOpen ? (
+        <UnlockModal patient={patient} onClose={() => setModalOpen(false)} />
+      ) : null}
     </article>
   );
 }
@@ -250,6 +271,152 @@ function Stat({ label, value }: { label: string; value: number }) {
     <div className="rounded-xl bg-muted/50 p-3">
       <p className="text-lg font-semibold text-primary">{value}</p>
       <p className="text-[11px] text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+const benefits: { icon: typeof CheckCircle2; text: string }[] = [
+  { icon: CheckCircle2, text: "Actividades personalizadas organizadas por prioridad." },
+  { icon: CalendarDays, text: "Frecuencia semanal recomendada." },
+  { icon: FileDown, text: "Recursos y materiales descargables." },
+  {
+    icon: Bot,
+    text: "Acompañamiento de Moholka, nuestra agente IA especializada, durante los primeros 30 días.",
+  },
+  { icon: MessagesSquare, text: "Respuestas a dudas relacionadas con la aplicación del plan." },
+  { icon: Users, text: "Acceso a la membresía grupal con la neuropsicóloga." },
+  { icon: History, text: "Conservación del historial para futuras reevaluaciones." },
+];
+
+const outcomes: { icon: typeof Compass; text: string }[] = [
+  { icon: Compass, text: "Comprender por dónde empezar sin sentirte abrumado." },
+  {
+    icon: ClipboardList,
+    text: "Trabajar las prioridades identificadas en la evaluación con una secuencia organizada.",
+  },
+  {
+    icon: HeartHandshake,
+    text: "Contar con una guía práctica y una comunidad para fortalecer el viaje.",
+  },
+];
+
+function UnlockModal({
+  patient,
+  onClose,
+}: {
+  patient: string;
+  onClose: () => void;
+}) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="unlock-modal-title"
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-background/60 p-4 backdrop-blur-sm sm:items-center"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative my-4 w-full max-w-lg rounded-3xl bg-card p-6 shadow-2xl ring-1 ring-border/60"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar"
+          className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
+          <Sparkles className="h-3.5 w-3.5" /> Plan Interactivo NEUROPLAN
+        </p>
+        <h2
+          id="unlock-modal-title"
+          className="mt-2 font-serif text-2xl leading-tight text-foreground"
+        >
+          Estás a un paso de comenzar el acompañamiento personalizado de tu
+          hijo.
+        </h2>
+
+        <div className="mt-3 space-y-2 text-sm text-foreground">
+          <p>
+            Has identificado las principales prioridades mediante la Hoja de
+            Ruta para el Neurodesarrollo.
+          </p>
+          <p>
+            Ahora puedes desbloquear el Plan Interactivo NEUROPLAN, diseñado
+            para transformar esos resultados en un plan organizado, práctico y
+            fácil de implementar en casa.
+          </p>
+        </div>
+
+        <ul className="mt-4 space-y-2 text-sm">
+          {benefits.map((b) => (
+            <li key={b.text} className="flex items-start gap-2">
+              <b.icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <span className="text-foreground">{b.text}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-5 rounded-2xl bg-primary/5 p-4 ring-1 ring-primary/20">
+          <p className="text-xs font-medium uppercase tracking-wide text-primary">
+            ¿Qué lograrás con este plan?
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {outcomes.map((o) => (
+              <li key={o.text} className="flex items-start gap-2">
+                <o.icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span className="text-foreground">{o.text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p className="mt-4 text-xs text-muted-foreground">
+          El Plan Interactivo es una herramienta educativa y orientadora. No
+          reemplaza la valoración clínica de un profesional.
+        </p>
+
+        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigate({ to: "/app/plan-interactivo", search: { patient } });
+            }}
+            className="inline-flex flex-1 items-center justify-center rounded-full border border-primary/40 px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10"
+          >
+            Conocer mi Plan
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigate({ to: "/checkout", search: { patient } });
+            }}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+          >
+            Continuar al pago <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
