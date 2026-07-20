@@ -89,14 +89,6 @@ function Landing() {
               Neurodesarrollo, un resumen gratuito que organiza las principales
               áreas que requieren atención.
             </p>
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground md:text-lg">
-              Si decides continuar, podrás acceder a un programa de acompañamiento
-              que incluye un Plan Interactivo Personalizado, el acompañamiento de
-              Moholka, un agente de Inteligencia Artificial especializado en
-              neurodesarrollo, y una membresía grupal dirigida por la
-              neuropsicóloga para profundizar en temas de neurodesarrollo y
-              resolver dudas durante el proceso.
-            </p>
             <div className="mt-8">
               <Link
                 to="/auth"
