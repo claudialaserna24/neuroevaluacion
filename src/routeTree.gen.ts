@@ -31,6 +31,7 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAppPlanPatientIdRouteImport } from './routes/_authenticated/app.plan.$patientId'
 import { Route as AuthenticatedAppPacientesPatientIdRouteImport } from './routes/_authenticated/app.pacientes.$patientId'
+import { Route as AuthenticatedAppAdminManualRouteImport } from './routes/_authenticated/app.admin.manual'
 import { Route as AuthenticatedAppAdminCerebroRouteImport } from './routes/_authenticated/app.admin.cerebro'
 import { Route as AuthenticatedAppPlanPatientIdVerRouteImport } from './routes/_authenticated/app.plan.$patientId.ver'
 
@@ -152,6 +153,12 @@ const AuthenticatedAppPacientesPatientIdRoute =
     path: '/$patientId',
     getParentRoute: () => AuthenticatedAppPacientesRoute,
   } as any)
+const AuthenticatedAppAdminManualRoute =
+  AuthenticatedAppAdminManualRouteImport.update({
+    id: '/admin/manual',
+    path: '/admin/manual',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppAdminCerebroRoute =
   AuthenticatedAppAdminCerebroRouteImport.update({
     id: '/admin/cerebro',
@@ -186,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
+  '/app/admin/manual': typeof AuthenticatedAppAdminManualRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
   '/app/plan/$patientId': typeof AuthenticatedAppPlanPatientIdRouteWithChildren
   '/app/plan/$patientId/ver': typeof AuthenticatedAppPlanPatientIdVerRoute
@@ -210,6 +218,7 @@ export interface FileRoutesByTo {
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
+  '/app/admin/manual': typeof AuthenticatedAppAdminManualRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
   '/app/plan/$patientId': typeof AuthenticatedAppPlanPatientIdRouteWithChildren
   '/app/plan/$patientId/ver': typeof AuthenticatedAppPlanPatientIdVerRoute
@@ -237,6 +246,7 @@ export interface FileRoutesById {
   '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
+  '/_authenticated/app/admin/manual': typeof AuthenticatedAppAdminManualRoute
   '/_authenticated/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
   '/_authenticated/app/plan/$patientId': typeof AuthenticatedAppPlanPatientIdRouteWithChildren
   '/_authenticated/app/plan/$patientId/ver': typeof AuthenticatedAppPlanPatientIdVerRoute
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/api/public/wompi-webhook'
     | '/app/'
     | '/app/admin/cerebro'
+    | '/app/admin/manual'
     | '/app/pacientes/$patientId'
     | '/app/plan/$patientId'
     | '/app/plan/$patientId/ver'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/api/public/wompi-webhook'
     | '/app'
     | '/app/admin/cerebro'
+    | '/app/admin/manual'
     | '/app/pacientes/$patientId'
     | '/app/plan/$patientId'
     | '/app/plan/$patientId/ver'
@@ -314,6 +326,7 @@ export interface FileRouteTypes {
     | '/api/public/wompi-webhook'
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/cerebro'
+    | '/_authenticated/app/admin/manual'
     | '/_authenticated/app/pacientes/$patientId'
     | '/_authenticated/app/plan/$patientId'
     | '/_authenticated/app/plan/$patientId/ver'
@@ -488,6 +501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPacientesPatientIdRouteImport
       parentRoute: typeof AuthenticatedAppPacientesRoute
     }
+    '/_authenticated/app/admin/manual': {
+      id: '/_authenticated/app/admin/manual'
+      path: '/admin/manual'
+      fullPath: '/app/admin/manual'
+      preLoaderRoute: typeof AuthenticatedAppAdminManualRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/admin/cerebro': {
       id: '/_authenticated/app/admin/cerebro'
       path: '/admin/cerebro'
@@ -543,6 +563,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppPlanInteractivoRoute: typeof AuthenticatedAppPlanInteractivoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppAdminCerebroRoute: typeof AuthenticatedAppAdminCerebroRoute
+  AuthenticatedAppAdminManualRoute: typeof AuthenticatedAppAdminManualRoute
   AuthenticatedAppPlanPatientIdRoute: typeof AuthenticatedAppPlanPatientIdRouteWithChildren
 }
 
@@ -554,6 +575,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppPlanInteractivoRoute: AuthenticatedAppPlanInteractivoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppAdminCerebroRoute: AuthenticatedAppAdminCerebroRoute,
+  AuthenticatedAppAdminManualRoute: AuthenticatedAppAdminManualRoute,
   AuthenticatedAppPlanPatientIdRoute:
     AuthenticatedAppPlanPatientIdRouteWithChildren,
 }
