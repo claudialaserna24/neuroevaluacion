@@ -29,8 +29,10 @@ import { Route as AuthenticatedAppInformeRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppEvaluacionRouteImport } from './routes/_authenticated/app.evaluacion'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as AuthenticatedAppPlanPatientIdRouteImport } from './routes/_authenticated/app.plan.$patientId'
 import { Route as AuthenticatedAppPacientesPatientIdRouteImport } from './routes/_authenticated/app.pacientes.$patientId'
 import { Route as AuthenticatedAppAdminCerebroRouteImport } from './routes/_authenticated/app.admin.cerebro'
+import { Route as AuthenticatedAppPlanPatientIdVerRouteImport } from './routes/_authenticated/app.plan.$patientId.ver'
 
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
@@ -138,6 +140,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAppPlanPatientIdRoute =
+  AuthenticatedAppPlanPatientIdRouteImport.update({
+    id: '/plan/$patientId',
+    path: '/plan/$patientId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppPacientesPatientIdRoute =
   AuthenticatedAppPacientesPatientIdRouteImport.update({
     id: '/$patientId',
@@ -149,6 +157,12 @@ const AuthenticatedAppAdminCerebroRoute =
     id: '/admin/cerebro',
     path: '/admin/cerebro',
     getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPlanPatientIdVerRoute =
+  AuthenticatedAppPlanPatientIdVerRouteImport.update({
+    id: '/ver',
+    path: '/ver',
+    getParentRoute: () => AuthenticatedAppPlanPatientIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -173,6 +187,8 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
+  '/app/plan/$patientId': typeof AuthenticatedAppPlanPatientIdRouteWithChildren
+  '/app/plan/$patientId/ver': typeof AuthenticatedAppPlanPatientIdVerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -195,6 +211,8 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
+  '/app/plan/$patientId': typeof AuthenticatedAppPlanPatientIdRouteWithChildren
+  '/app/plan/$patientId/ver': typeof AuthenticatedAppPlanPatientIdVerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -220,6 +238,8 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/admin/cerebro': typeof AuthenticatedAppAdminCerebroRoute
   '/_authenticated/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
+  '/_authenticated/app/plan/$patientId': typeof AuthenticatedAppPlanPatientIdRouteWithChildren
+  '/_authenticated/app/plan/$patientId/ver': typeof AuthenticatedAppPlanPatientIdVerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -245,6 +265,8 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/admin/cerebro'
     | '/app/pacientes/$patientId'
+    | '/app/plan/$patientId'
+    | '/app/plan/$patientId/ver'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -267,6 +289,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/admin/cerebro'
     | '/app/pacientes/$patientId'
+    | '/app/plan/$patientId'
+    | '/app/plan/$patientId/ver'
   id:
     | '__root__'
     | '/'
@@ -291,6 +315,8 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/cerebro'
     | '/_authenticated/app/pacientes/$patientId'
+    | '/_authenticated/app/plan/$patientId'
+    | '/_authenticated/app/plan/$patientId/ver'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -448,6 +474,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/app/plan/$patientId': {
+      id: '/_authenticated/app/plan/$patientId'
+      path: '/plan/$patientId'
+      fullPath: '/app/plan/$patientId'
+      preLoaderRoute: typeof AuthenticatedAppPlanPatientIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/pacientes/$patientId': {
       id: '/_authenticated/app/pacientes/$patientId'
       path: '/$patientId'
@@ -461,6 +494,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/admin/cerebro'
       preLoaderRoute: typeof AuthenticatedAppAdminCerebroRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/plan/$patientId/ver': {
+      id: '/_authenticated/app/plan/$patientId/ver'
+      path: '/ver'
+      fullPath: '/app/plan/$patientId/ver'
+      preLoaderRoute: typeof AuthenticatedAppPlanPatientIdVerRouteImport
+      parentRoute: typeof AuthenticatedAppPlanPatientIdRoute
     }
   }
 }
@@ -480,6 +520,21 @@ const AuthenticatedAppPacientesRouteWithChildren =
     AuthenticatedAppPacientesRouteChildren,
   )
 
+interface AuthenticatedAppPlanPatientIdRouteChildren {
+  AuthenticatedAppPlanPatientIdVerRoute: typeof AuthenticatedAppPlanPatientIdVerRoute
+}
+
+const AuthenticatedAppPlanPatientIdRouteChildren: AuthenticatedAppPlanPatientIdRouteChildren =
+  {
+    AuthenticatedAppPlanPatientIdVerRoute:
+      AuthenticatedAppPlanPatientIdVerRoute,
+  }
+
+const AuthenticatedAppPlanPatientIdRouteWithChildren =
+  AuthenticatedAppPlanPatientIdRoute._addFileChildren(
+    AuthenticatedAppPlanPatientIdRouteChildren,
+  )
+
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppEvaluacionRoute: typeof AuthenticatedAppEvaluacionRoute
   AuthenticatedAppInformeRoute: typeof AuthenticatedAppInformeRoute
@@ -488,6 +543,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppPlanInteractivoRoute: typeof AuthenticatedAppPlanInteractivoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppAdminCerebroRoute: typeof AuthenticatedAppAdminCerebroRoute
+  AuthenticatedAppPlanPatientIdRoute: typeof AuthenticatedAppPlanPatientIdRouteWithChildren
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
@@ -498,6 +554,8 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppPlanInteractivoRoute: AuthenticatedAppPlanInteractivoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppAdminCerebroRoute: AuthenticatedAppAdminCerebroRoute,
+  AuthenticatedAppPlanPatientIdRoute:
+    AuthenticatedAppPlanPatientIdRouteWithChildren,
 }
 
 const AuthenticatedAppRouteWithChildren =

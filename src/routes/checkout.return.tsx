@@ -118,7 +118,7 @@ function Approved({ patientId }: { patientId: string }) {
       <button
         type="button"
         onClick={() =>
-          navigate({ to: "/app/plan-interactivo", search: { patient: patientId } })
+          navigate({ to: "/app/plan/$patientId", params: { patientId } })
         }
         className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
       >

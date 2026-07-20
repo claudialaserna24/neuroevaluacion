@@ -183,7 +183,13 @@ export type Database = {
           functional: Json
           generated_at: string
           id: string
+          manual_pdf_url: string | null
           patient_id: string
+          plan_activated_at: string | null
+          plan_content: Json | null
+          plan_generated_at: string | null
+          plan_generation_status: string
+          plan_pdf_url: string | null
           plan_status: Database["public"]["Enums"]["plan_status"]
           priorities: Json
           reflexes: Json
@@ -196,7 +202,13 @@ export type Database = {
           functional: Json
           generated_at?: string
           id?: string
+          manual_pdf_url?: string | null
           patient_id: string
+          plan_activated_at?: string | null
+          plan_content?: Json | null
+          plan_generated_at?: string | null
+          plan_generation_status?: string
+          plan_pdf_url?: string | null
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priorities: Json
           reflexes: Json
@@ -209,7 +221,13 @@ export type Database = {
           functional?: Json
           generated_at?: string
           id?: string
+          manual_pdf_url?: string | null
           patient_id?: string
+          plan_activated_at?: string | null
+          plan_content?: Json | null
+          plan_generated_at?: string | null
+          plan_generation_status?: string
+          plan_pdf_url?: string | null
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priorities?: Json
           reflexes?: Json
