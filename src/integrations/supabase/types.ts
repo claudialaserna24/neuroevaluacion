@@ -142,8 +142,10 @@ export type Database = {
           generated_at: string
           id: string
           patient_id: string
+          plan_status: Database["public"]["Enums"]["plan_status"]
           priorities: Json
           reflexes: Json
+          unlocked_at: string | null
           user_id: string
         }
         Insert: {
@@ -153,8 +155,10 @@ export type Database = {
           generated_at?: string
           id?: string
           patient_id: string
+          plan_status?: Database["public"]["Enums"]["plan_status"]
           priorities: Json
           reflexes: Json
+          unlocked_at?: string | null
           user_id: string
         }
         Update: {
@@ -164,8 +168,10 @@ export type Database = {
           generated_at?: string
           id?: string
           patient_id?: string
+          plan_status?: Database["public"]["Enums"]["plan_status"]
           priorities?: Json
           reflexes?: Json
+          unlocked_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -235,6 +241,66 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          assessment_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          patient_id: string
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+          user_id: string
+          wompi_reference: string | null
+          wompi_transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          assessment_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          patient_id: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id: string
+          wompi_reference?: string | null
+          wompi_transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          assessment_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          patient_id?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id?: string
+          wompi_reference?: string | null
+          wompi_transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -332,6 +398,8 @@ export type Database = {
       app_role: "usuario" | "administrador"
       assessment_module: "cognitive" | "functional" | "reflex"
       assessment_status: "in_progress" | "completed"
+      payment_status: "pending" | "paid" | "failed" | "cancelled"
+      plan_status: "locked" | "unlocked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -463,6 +531,8 @@ export const Constants = {
       app_role: ["usuario", "administrador"],
       assessment_module: ["cognitive", "functional", "reflex"],
       assessment_status: ["in_progress", "completed"],
+      payment_status: ["pending", "paid", "failed", "cancelled"],
+      plan_status: ["locked", "unlocked"],
     },
   },
 } as const
