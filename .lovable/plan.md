@@ -1,77 +1,77 @@
+## CEREBRO — Base de conocimiento clínico
 
-# Integración funcional Wompi — Sandbox
+Crear la arquitectura para importar y consultar reglas de intervención neurofuncional desde CSV. No incluye generación de Plan ni IA.
 
-Reutilizamos toda la infraestructura ya creada (`wompi.server.ts`, `wompi.functions.ts`, secrets, tabla `payments`, `plan_status`). No se toca UI existente salvo el flujo del checkout y agregar 3 pantallas de resultado.
+### 1. Tabla `knowledge_documents`
 
-## ⚠️ Nota importante sobre moneda
+Migración con la siguiente estructura:
 
-Wompi solo procesa **COP** (pesos colombianos). Hoy `plan-pricing.ts` define el precio en **USD $80**. Para Sandbox usaremos **COP** en la transacción (los productos digitales de Wompi son COP). Propuesta: mantener `PLAN_PRICE_USD = 80` como precio de referencia y añadir `PLAN_PRICE_COP` (p.ej. `320000` COP) que es el monto real cobrado. La UI del checkout puede seguir mostrando USD $80 o mostrar ambos — confírmame si prefieres cambiar el precio mostrado a COP. Continúo el plan asumiendo que agrego `PLAN_PRICE_COP = 320000` y muestro un renglón "Equivalente en COP" en el resumen.
+- `id` UUID PK
+- `module` TEXT NOT NULL (Reflejos, Perfil Cognitivo, Evaluación Funcional)
+- `subcategory` TEXT (Moro, Vestibular, Táctil, Auditiva, …)
+- `severity_level` TEXT (libre, definido por CSV)
+- `behavioral_condition` TEXT
+- `intervention_text` TEXT NOT NULL (contenido íntegro, sin transformar)
+- `image_url` TEXT NULL
+- `active` BOOLEAN NOT NULL DEFAULT true
+- `version` TEXT NOT NULL DEFAULT 'v1'
+- `created_at`, `updated_at` con trigger `touch_updated_at`
 
-## Enfoque técnico
+Índices para consultas filtradas de la Skill:
+- `(module, subcategory, severity_level)`
+- `(module, behavioral_condition)`
+- `(active)`
 
-Usaremos **Web Checkout (redirección)** de Wompi — el modo más simple y oficial para pagos únicos: el usuario sale a `https://checkout.wompi.co/p/` con `public-key`, `reference`, `amount-in-cents`, `currency=COP`, `signature:integrity`, `redirect-url`. Cuando Wompi termina, redirige al usuario a nuestro `redirect-url` con `id` de transacción en query. En paralelo, el webhook oficial de Wompi (`transaction.updated`) marca el pago como `paid`/`declined` en nuestra base — es la fuente de verdad.
+### 2. GRANTs + RLS
 
-## Cambios
+- GRANT SELECT, INSERT, UPDATE, DELETE al `service_role` (ALL) y `authenticated` (necesario para que la Skill/MCP consulte con el token del usuario).
+- RLS habilitado.
+- Políticas:
+  - **SELECT** para `authenticated` cuando `active = true` — permite que la Skill consulte reglas activas durante la generación del Plan (autorizada al usuario autenticado; no expone edición).
+  - **INSERT / UPDATE / DELETE** sólo cuando `public.has_role(auth.uid(), 'administrador')`.
+- Sin acceso `anon`.
 
-### 1. Backend — server functions (`src/lib/payments.functions.ts`)
+### 3. Storage: bucket `cerebro-assets`
 
-- `createPendingPayment` (existente): calcular `amountInCents` en COP, generar firma con `generateIntegritySignature`, devolver `{ paymentId, reference, checkoutUrl }` construyendo la URL del Web Checkout con todos los parámetros firmados y `redirect-url = ${SITE_URL}/checkout/return?paymentId=...`.
-- `getPaymentStatus({ paymentId })` (nuevo): devuelve `status`, `wompi_transaction_id`, y `plan_status` del roadmap. Se usa desde la pantalla de retorno para poll (cada 2s, máx ~30s).
+- Bucket privado (`public=false`) creado con `supabase--storage_create_bucket`.
+- Políticas RLS sobre `storage.objects`:
+  - SELECT permitido a `authenticated` (Skill y consultas del Plan).
+  - INSERT/UPDATE/DELETE sólo a administradores vía `has_role`.
+- `image_url` almacenará la URL (firmada o pública según necesidad futura) generada al subir el archivo. En esta fase basta con el campo listo.
 
-### 2. Webhook público (`src/routes/api/public/wompi-webhook.ts` — nuevo)
+### 4. Importación CSV
 
-- `POST` handler bajo `/api/public/wompi-webhook` (bypass de auth).
-- Verifica `signature.checksum` con `verifyEventSignature` (propiedades declaradas por Wompi).
-- Al recibir `transaction.updated`:
-  - Busca `payments` por `wompi_reference`.
-  - Consulta el estado real de la transacción a la API de Wompi (`GET /transactions/{id}` con `WOMPI_PRIVATE_KEY`) — nunca confiar solo en el payload.
-  - Si `status === "APPROVED"`: actualiza `payments` con `status=paid`, `paid_at=now()`, `wompi_transaction_id`; y actualiza el `neurodevelopment_roadmaps` correspondiente (`plan_status=unlocked`, `unlocked_at=now()`) filtrando por `assessment_id` del payment (solo desbloquea esa evaluación).
-  - Si `DECLINED`/`VOIDED`/`ERROR`: `status=rejected`.
-  - Escribe con `supabaseAdmin` (import dinámico dentro del handler).
-- Responde `200 OK` siempre tras verificar la firma para que Wompi no reintente indefinidamente.
+En esta fase no se construye UI de importación completa; se deja el esquema listo para que Lovable/administrador importe filas 1:1. Cada fila del CSV → un registro. Sin concatenación.
 
-**URL a registrar en el panel Wompi:**
-`https://neuroevaluacion.lovable.app/api/public/wompi-webhook`
+Se documenta el mapeo esperado de columnas del CSV a campos de la tabla en `AGENTS.md` (o en un README breve dentro de `src/lib/cerebro/`) para que la próxima fase implemente el importador. No se crea función de importación todavía — el usuario no lo pidió.
 
-### 3. Migración SQL
+### 5. Consulta futura (arquitectura, no implementación)
 
-- Añadir valor `'rejected'` al enum `payment_status` si no existe.
-- Añadir `GRANT UPDATE ON public.neurodevelopment_roadmaps TO service_role` si falta (para que el webhook con admin client pueda desbloquear).
+La tabla queda preparada para queries del tipo:
 
-### 4. UI — Checkout (`src/routes/_authenticated/checkout.tsx`)
+```sql
+SELECT intervention_text, image_url
+FROM knowledge_documents
+WHERE active = true
+  AND module = $1
+  AND subcategory = ANY($2)
+  AND severity_level = $3
+  AND behavioral_condition = ANY($4);
+```
 
-Reemplazar el `onClick` actual del botón "Pagar con Wompi":
-1. Al hacer clic, mostrar loader con texto **"Estamos preparando tu pago de forma segura..."**.
-2. Llamar `createPendingPayment` → recibe `checkoutUrl`.
-3. `window.location.href = checkoutUrl` (redirección al Web Checkout Wompi).
+Los índices compuestos anteriores soportan estos filtros.
 
-### 5. Pantalla de retorno (`src/routes/checkout.return.tsx` — nuevo, público)
+### 6. Integración futura
 
-Wompi permite `redirect-url` a cualquier URL nuestra. La ponemos pública (no bajo `_authenticated`) para evitar problemas de sesión en el retorno; si no hay sesión, hacemos que el chequeo del pago sea por `paymentId` + firma corta o simplemente confiamos en RLS al re-abrir la sesión (la sesión persiste en `localStorage`, así que en la práctica el usuario vuelve autenticado).
+Las tablas `assessments`, `neurodevelopment_roadmaps` (initial_reports) y la futura `interactive_plans` permanecen intactas. La Skill usará `patient_id → assessment → perfil` para derivar los filtros que aplicará contra `knowledge_documents`.
 
-Estados:
-- **Verificando** (poll a `getPaymentStatus`): **"Estamos verificando tu pago. Esto puede tardar unos segundos."**
-- **Aprobado** (`status=paid`): pantalla de éxito con identidad NEUROPLAN — título "¡Pago realizado con éxito!", texto "Tu Plan Interactivo ya está disponible y puedes comenzar inmediatamente.", botón **Ir a mi Plan Interactivo** → `/app/plan-interactivo` (o la ruta del plan desbloqueado del paciente).
-- **Rechazado** (`status=rejected`): "No fue posible completar el pago." + botón **Intentar nuevamente** → vuelve a `/checkout?patient=...`.
-- **Cancelado** (Wompi vuelve con query `?env=... &id=...` pero la transacción quedó `VOIDED`/no existe / usuario cerró): "Has cancelado el proceso de pago." + botón **Volver a la Hoja de Ruta** → `/app/informe?patient=...`.
+### 7. Validación
 
-Después de ~30s de poll sin resolución, cae a estado "cancelado" con opción de reintentar (el webhook seguirá procesando en background si llega tarde).
+- Migración aplicada sin warnings de linter.
+- Bucket creado.
+- RLS verificado: administrador puede insertar/editar; usuario autenticado sólo lee reglas activas; anónimo no ve nada.
 
-### 6. Menú Plan Interactivo — habilitación automática
+### Detalles técnicos
 
-Ya existe `getPlanStatus`. Verificar que el ítem de menú/CTA "Plan Interactivo" del dashboard use `plan_status === 'unlocked'` para habilitarse. Si el chequeo no está, agregarlo en el punto donde se lista el menú (sin cambiar diseño).
-
-## Pruebas Sandbox
-
-1. Completar evaluación → Hoja de Ruta → Desbloquear.
-2. Checkout → "Pagar con Wompi" → redirige al widget Sandbox.
-3. Usar tarjeta de prueba Wompi (APPROVED: `4242 4242 4242 4242`, CVV `123`, cualquier fecha futura).
-4. Volver a `/checkout/return` → ver "verificando" → luego "¡Pago realizado con éxito!".
-5. Verificar en DB: `payments.status='paid'`, `paid_at`, `wompi_transaction_id`; `neurodevelopment_roadmaps.plan_status='unlocked'`.
-6. Repetir con tarjeta DECLINED (`4111 1111 1111 1111`) para validar flujo de rechazo.
-7. Confirmar que solo se desbloquea el roadmap del `assessment_id` pagado.
-
-## Fuera de alcance
-
-- No se modifica landing, evaluación, informe, ni auth.
-- No se cambia el precio USD mostrado (salvo el añadido COP en el resumen — confirmar).
+- Archivos nuevos: sólo la migración SQL y (opcional) `src/lib/cerebro/README.md` con el mapeo CSV → columnas. Sin cambios en tablas existentes ni en código de app.
+- No se crean server functions de lectura todavía; se añadirán junto con el motor del Plan Interactivo en la fase siguiente.
