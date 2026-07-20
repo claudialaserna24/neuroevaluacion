@@ -3,6 +3,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { MANUAL_BUCKET, MANUAL_OBJECT_PATH, SIGNED_URL_TTL } from "./constants";
 
+async function manualObjectExists(): Promise<boolean> {
+  const { supabaseAdmin } = await import(
+    "@/integrations/supabase/client.server"
+  );
+  const { data, error } = await supabaseAdmin.storage
+    .from(MANUAL_BUCKET)
+    .list("", { search: MANUAL_OBJECT_PATH, limit: 1 });
+  if (error || !data) return false;
+  return data.some((o) => o.name === MANUAL_OBJECT_PATH);
+}
+
 const patientInput = z.object({ patientId: z.string().uuid() });
 
 type BlockedReason =
@@ -44,6 +55,7 @@ export const getInteractivePlan = createServerFn({ method: "GET" })
       return { blocked: true as const, reason: "not_unlocked" as BlockedReason };
     }
 
+    const manual_available = await manualObjectExists();
     return {
       blocked: false as const,
       patient,
@@ -57,7 +69,7 @@ export const getInteractivePlan = createServerFn({ method: "GET" })
         plan_activated_at: roadmap.plan_activated_at ?? roadmap.unlocked_at,
         plan_pdf_url: roadmap.plan_pdf_url,
       },
-      manual_available: MANUAL_OBJECT_PATH !== null,
+      manual_available,
     };
   });
 
@@ -92,9 +104,6 @@ export const getManualDownloadUrl = createServerFn({ method: "GET" })
   .inputValidator((d: { patientId: string }) => patientInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertUnlocked(context.supabase, context.userId, data.patientId);
-    if (!MANUAL_OBJECT_PATH) {
-      return { available: false as const };
-    }
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );
@@ -131,4 +140,39 @@ export const getPlanPdfDownloadUrl = createServerFn({ method: "GET" })
       return { available: false as const, reason: "preparing" as const };
     }
     return { available: true as const, url: signed.signedUrl };
+  });
+
+// ─── Administración del Manual Oficial ────────────────────────────────────────
+
+async function assertAdmin(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  userId: string,
+) {
+  const { data: isAdmin } = await supabase.rpc("has_role", {
+    _user_id: userId,
+    _role: "administrador",
+  });
+  if (!isAdmin) throw new Error("Acceso restringido");
+}
+
+export const getManualStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { data, error } = await supabaseAdmin.storage
+      .from(MANUAL_BUCKET)
+      .list("", { search: MANUAL_OBJECT_PATH, limit: 1 });
+    if (error) return { available: false as const, path: MANUAL_OBJECT_PATH };
+    const obj = data?.find((o) => o.name === MANUAL_OBJECT_PATH);
+    if (!obj) return { available: false as const, path: MANUAL_OBJECT_PATH };
+    return {
+      available: true as const,
+      path: MANUAL_OBJECT_PATH,
+      updated_at: obj.updated_at ?? obj.created_at ?? null,
+      size:
+        (obj.metadata as { size?: number } | null | undefined)?.size ?? null,
+    };
   });

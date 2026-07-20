@@ -189,7 +189,7 @@ function PlanInteractivoDashboard() {
         <Card
           icon={<BookOpen className="h-4 w-4" />}
           title="Manual Oficial de Ejercicios NEUROPLAN"
-          desc="Este manual complementa el Plan Interactivo mostrando de forma visual la ejecución correcta de los ejercicios propuestos."
+          desc="Este manual contiene la explicación visual paso a paso de todos los ejercicios mencionados en tu Plan Interactivo."
         >
           <button
             type="button"
@@ -198,7 +198,7 @@ function PlanInteractivoDashboard() {
             className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
-            {downloading === "manual" ? "Preparando…" : "Descargar Manual"}
+            {downloading === "manual" ? "Preparando…" : "Descargar Manual Oficial (PDF)"}
           </button>
           {!manual_available && (
             <p className="mt-2 text-[11px] text-muted-foreground">
