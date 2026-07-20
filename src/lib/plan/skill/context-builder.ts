@@ -20,6 +20,7 @@ export type PlanInput = {
     cognitive: unknown;
     functional: unknown;
     reflexes: unknown;
+    reflexList: ReflexEntry[];
     priorities: {
       context?: { generalLevel?: string; hemisphere?: string };
       functionalPriorities?: string[];
@@ -29,6 +30,31 @@ export type PlanInput = {
   equipment: string[]; // marcado por la familia; vacío si no registrado
   durationWeeks: 12;
 };
+
+export type ReflexEntry = {
+  reflex: string;
+  level: string | null;
+  percent: number | null;
+  score: number | null;
+};
+
+function normalizeReflexList(raw: unknown): ReflexEntry[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r) => {
+      if (!r || typeof r !== "object") return null;
+      const o = r as Record<string, unknown>;
+      const name = typeof o.reflex === "string" ? o.reflex : null;
+      if (!name) return null;
+      return {
+        reflex: name,
+        level: typeof o.level === "string" ? o.level : null,
+        percent: typeof o.percent === "number" ? o.percent : null,
+        score: typeof o.score === "number" ? o.score : null,
+      } satisfies ReflexEntry;
+    })
+    .filter((r): r is ReflexEntry => r !== null);
+}
 
 function computeAgeYears(dob: string | null): number | null {
   if (!dob) return null;
@@ -76,6 +102,16 @@ export async function buildPlanInput(
   }
 
   const priorities = (roadmap.priorities ?? {}) as PlanInput["roadmap"]["priorities"];
+  const reflexList = normalizeReflexList(roadmap.reflexes);
+  const priorityOrder = new Map<string, number>();
+  (priorities.reflexPriorities ?? []).forEach((name, i) => priorityOrder.set(name, i));
+  // Ordena: primero los que están en reflexPriorities (en su orden),
+  // luego el resto tal como llega desde el motor (ya vienen por severidad desc).
+  reflexList.sort((a, b) => {
+    const ai = priorityOrder.has(a.reflex) ? priorityOrder.get(a.reflex)! : Number.MAX_SAFE_INTEGER;
+    const bi = priorityOrder.has(b.reflex) ? priorityOrder.get(b.reflex)! : Number.MAX_SAFE_INTEGER;
+    return ai - bi;
+  });
 
   const input: PlanInput = {
     patient: {
@@ -97,6 +133,7 @@ export async function buildPlanInput(
       cognitive: roadmap.cognitive,
       functional: roadmap.functional,
       reflexes: roadmap.reflexes,
+      reflexList,
       priorities,
     },
     equipment: [], // reservado para futuro registro por parte de la familia

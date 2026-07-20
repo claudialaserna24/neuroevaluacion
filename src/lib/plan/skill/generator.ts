@@ -2,11 +2,12 @@ import { generateText, NoObjectGeneratedError, Output } from "ai";
 import type { Json } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import { PlanContentSchema, type PlanContent } from "./schema";
+import { LEGAL_NOTICE_TEXT, PlanContentSchema, type PlanContent } from "./schema";
 import { SYSTEM_PROMPT, USER_PROMPT_INSTRUCTIONS } from "./prompts";
 import {
   formatCerebroForPrompt,
   queryCerebro,
+  queryProgression,
   type QueryFilter,
 } from "./cerebro-query";
 import { buildPlanInput, type PlanInput } from "./context-builder";
@@ -18,6 +19,8 @@ export type GenerateResult =
 const FUNCTIONAL_MODULE = "Áreas Funcionales";
 const REFLEX_MODULE = "Reflejos";
 const RECOMMENDATIONS_MODULE = "Recomendaciones";
+const PROTOCOLS_MODULE = "Protocolos";
+const ACTIVITIES_MODULE = "Actividades";
 
 async function collectCerebroBriefing(
   supabase: SupabaseClient,
@@ -26,7 +29,7 @@ async function collectCerebroBriefing(
   const parts: string[] = [];
   const priorities = input.roadmap.priorities;
   const funcPriorities = priorities.functionalPriorities ?? [];
-  const reflexPriorities = priorities.reflexPriorities ?? [];
+  const reflexList = input.roadmap.reflexList;
   const hemisphere = priorities.context?.hemisphere ?? null;
 
   for (const area of funcPriorities) {
@@ -40,15 +43,39 @@ async function collectCerebroBriefing(
     parts.push(formatCerebroForPrompt(`Área funcional: ${area}`, hit));
   }
 
-  for (const reflex of reflexPriorities) {
+  // TODOS los reflejos, no sólo los prioritarios.
+  for (const entry of reflexList) {
     const filter: QueryFilter = {
       module: REFLEX_MODULE,
-      subcategory: reflex,
-      severity_level: null,
+      subcategory: entry.reflex,
+      severity_level: entry.level,
       behavioral_condition: null,
     };
     const hit = await queryCerebro(supabase, filter);
-    parts.push(formatCerebroForPrompt(`Reflejo: ${reflex}`, hit));
+    parts.push(
+      formatCerebroForPrompt(
+        `Reflejo: ${entry.reflex} (nivel ${entry.level ?? "-"})`,
+        hit,
+      ),
+    );
+
+    // Protocolos y Actividades de progresión para este reflejo (semanas 1-12).
+    const protocols = await queryProgression(supabase, PROTOCOLS_MODULE, entry.reflex);
+    const activities = await queryProgression(supabase, ACTIVITIES_MODULE, entry.reflex);
+    const progressionDocs = [...protocols, ...activities];
+    if (progressionDocs.length) {
+      const lines = progressionDocs.map(
+        (d) =>
+          `- [id: ${d.id}] (${d.subcategory ?? "-"} · ${d.severity_level ?? "-"}) ${d.intervention_text}`,
+      );
+      parts.push(
+        `# Progresión CEREBRO para ${entry.reflex}\n${lines.join("\n")}`,
+      );
+    } else {
+      parts.push(
+        `# Progresión CEREBRO para ${entry.reflex}\n(sin protocolos ni actividades documentados)`,
+      );
+    }
   }
 
   const recs = await queryCerebro(supabase, { module: RECOMMENDATIONS_MODULE });
@@ -61,6 +88,15 @@ function buildUserPrompt(input: PlanInput, cerebroBriefing: string): string {
   const p = input.patient;
   const r = input.roadmap;
   const priorities = r.priorities;
+  const reflexOrderStr =
+    r.reflexList
+      .map(
+        (x, i) =>
+          `${i + 1}. ${x.reflex} — nivel ${x.level ?? "-"}${
+            typeof x.percent === "number" ? ` (${x.percent}%)` : ""
+          }`,
+      )
+      .join("\n") || "—";
   const equipment = input.equipment.length
     ? input.equipment.join(", ")
     : "No se registró equipamiento específico; usar solo materiales cotidianos y seguros descritos en CEREBRO.";
@@ -82,6 +118,9 @@ function buildUserPrompt(input: PlanInput, cerebroBriefing: string): string {
     `- Hemisferio dominante: ${priorities.context?.hemisphere ?? "No disponible"}`,
     `- Prioridades funcionales (orden): ${(priorities.functionalPriorities ?? []).join(" > ") || "—"}`,
     `- Prioridades de reflejos (orden): ${(priorities.reflexPriorities ?? []).join(" > ") || "—"}`,
+    "",
+    "### Reflejos (orden completo — usa TODOS, en este orden, para 'instruction_cards')",
+    reflexOrderStr,
     "",
     "### Resumen bruto (referencia, no reinterpretar puntajes):",
     `cognitive=${JSON.stringify(r.cognitive)}`,
@@ -179,6 +218,11 @@ export async function generateInteractivePlan(
         .update({ plan_generation_status: "failed" })
         .eq("id", roadmapId);
       return { ok: false, reason: "no_longer_unlocked" };
+    }
+
+    // Forzar aviso legal literal, sin depender del modelo.
+    if (planContent) {
+      planContent.legal_notice = { body: LEGAL_NOTICE_TEXT };
     }
 
     await supabaseAdmin

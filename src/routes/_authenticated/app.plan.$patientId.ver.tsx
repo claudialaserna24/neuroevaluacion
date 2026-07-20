@@ -16,20 +16,47 @@ export const Route = createFileRoute("/_authenticated/app/plan/$patientId/ver")(
   component: VerPlanInteractivo,
 });
 
-type PlanSection = {
-  title: string;
-  body?: string;
-  items?: string[];
+type InstructionCard = {
+  name: string;
+  priority_level: string;
+  purpose: string;
+  description: string;
+  frequency: string;
+  repetitions: string;
+  progression: string;
+  materials: string;
+  sources?: string[];
+};
+
+type WeekBlock = { week: number; focus: string; activities: string; adjustments: string };
+type TrackingRow = {
+  week: number;
+  observations_prompt: string;
+  achievements_prompt: string;
+  difficulties_prompt: string;
 };
 
 type PlanContent = {
-  context?: string;
-  findings?: string[];
-  objectives?: string[];
-  instruction_cards?: PlanSection[];
-  routine_12_weeks?: PlanSection[];
-  family_recommendations?: string[];
+  context?: {
+    child_name: string;
+    age: string;
+    diagnosis: string;
+    reason: string;
+    duration_weeks: number;
+    intro: string;
+  };
+  findings?: { body: string; sources?: string[] };
+  objectives?: { intro: string; items: string[] };
+  instruction_cards?: { intro: string; cards: InstructionCard[] };
+  routine_12_weeks?: { intro: string; weeks: WeekBlock[] };
+  weekly_tracking?: { intro: string; rows: TrackingRow[] };
+  family_recommendations?: { intro: string; items: string[]; sources?: string[] };
+  closing?: { body: string };
+  legal_notice?: { body: string };
 };
+
+const MANUAL_REMINDER =
+  "La ejecución correcta de este ejercicio puede consultarse en el Manual Oficial de Ejercicios NEUROPLAN disponible para descarga.";
 
 function VerPlanInteractivo() {
   const { patientId } = Route.useParams();
@@ -101,32 +128,129 @@ function VerPlanInteractivo() {
         <>
           {content.context && (
             <Section title="Contexto del caso">
-              <p className="text-sm text-foreground whitespace-pre-line">{content.context}</p>
+              <dl className="grid grid-cols-1 gap-2 text-sm">
+                <Row label="Niño/a" value={content.context.child_name} />
+                <Row label="Edad" value={content.context.age} />
+                <Row label="Diagnóstico" value={content.context.diagnosis} />
+                <Row label="Motivo de consulta" value={content.context.reason} />
+                <Row label="Duración" value={`${content.context.duration_weeks} semanas`} />
+              </dl>
+              {content.context.intro && (
+                <p className="mt-3 text-sm text-foreground whitespace-pre-line">
+                  {content.context.intro}
+                </p>
+              )}
             </Section>
           )}
-          {content.findings && content.findings.length > 0 && (
-            <Section title="Hallazgos">
-              <BulletList items={content.findings} />
+          {content.findings?.body && (
+            <Section title="Hallazgos de la valoración">
+              <p className="text-sm text-foreground whitespace-pre-line">{content.findings.body}</p>
             </Section>
           )}
-          {content.objectives && content.objectives.length > 0 && (
-            <Section title="Objetivos">
-              <BulletList items={content.objectives} />
+          {content.objectives && content.objectives.items?.length > 0 && (
+            <Section title="Objetivos del programa">
+              {content.objectives.intro && (
+                <p className="mb-3 text-sm text-muted-foreground whitespace-pre-line">
+                  {content.objectives.intro}
+                </p>
+              )}
+              <BulletList items={content.objectives.items} />
             </Section>
           )}
-          {content.instruction_cards && content.instruction_cards.length > 0 && (
+          {content.instruction_cards && content.instruction_cards.cards?.length > 0 && (
             <Section title="Fichas de indicaciones">
-              <SubSections sections={content.instruction_cards} />
+              {content.instruction_cards.intro && (
+                <p className="mb-4 text-sm text-muted-foreground whitespace-pre-line">
+                  {content.instruction_cards.intro}
+                </p>
+              )}
+              <div className="flex flex-col gap-4">
+                {content.instruction_cards.cards.map((c, i) => (
+                  <div key={i} className="rounded-2xl border border-border/60 bg-background p-4">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="font-serif text-lg text-foreground">{c.name}</p>
+                      <span className="text-xs font-medium uppercase tracking-wide text-primary">
+                        Prioridad: {c.priority_level}
+                      </span>
+                    </div>
+                    <dl className="mt-3 grid grid-cols-1 gap-2 text-sm">
+                      <Row label="Propósito" value={c.purpose} />
+                      <Row label="Descripción" value={c.description} />
+                      <Row label="Frecuencia" value={c.frequency} />
+                      <Row label="Repeticiones" value={c.repetitions} />
+                      <Row label="Progresión" value={c.progression} />
+                      <Row label="Materiales" value={c.materials} />
+                    </dl>
+                    <p className="mt-3 rounded-lg bg-primary/5 p-3 text-xs italic text-muted-foreground">
+                      {MANUAL_REMINDER}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </Section>
           )}
-          {content.routine_12_weeks && content.routine_12_weeks.length > 0 && (
-            <Section title="Rutina de 12 semanas">
-              <SubSections sections={content.routine_12_weeks} />
+          {content.routine_12_weeks && content.routine_12_weeks.weeks?.length > 0 && (
+            <Section title="Organización de la rutina (12 semanas)">
+              {content.routine_12_weeks.intro && (
+                <p className="mb-3 text-sm text-muted-foreground whitespace-pre-line">
+                  {content.routine_12_weeks.intro}
+                </p>
+              )}
+              <div className="flex flex-col gap-3">
+                {content.routine_12_weeks.weeks.map((w) => (
+                  <div key={w.week} className="rounded-2xl border border-border/60 bg-background p-4">
+                    <p className="font-medium text-foreground">Semana {w.week}</p>
+                    <dl className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
+                      <Row label="Foco" value={w.focus} />
+                      <Row label="Actividades" value={w.activities} />
+                      <Row label="Ajustes" value={w.adjustments} />
+                    </dl>
+                  </div>
+                ))}
+              </div>
             </Section>
           )}
-          {content.family_recommendations && content.family_recommendations.length > 0 && (
+          {content.weekly_tracking && content.weekly_tracking.rows?.length > 0 && (
+            <Section title="Seguimiento semanal">
+              {content.weekly_tracking.intro && (
+                <p className="mb-3 text-sm text-muted-foreground whitespace-pre-line">
+                  {content.weekly_tracking.intro}
+                </p>
+              )}
+              <div className="flex flex-col gap-3">
+                {content.weekly_tracking.rows.map((row) => (
+                  <div key={row.week} className="rounded-2xl border border-border/60 bg-background p-4">
+                    <p className="font-medium text-foreground">Semana {row.week}</p>
+                    <dl className="mt-2 grid grid-cols-1 gap-1.5 text-sm">
+                      <Row label="Observaciones" value={row.observations_prompt} />
+                      <Row label="Logros" value={row.achievements_prompt} />
+                      <Row label="Dificultades" value={row.difficulties_prompt} />
+                    </dl>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+          {content.family_recommendations && content.family_recommendations.items?.length > 0 && (
             <Section title="Recomendaciones para la familia">
-              <BulletList items={content.family_recommendations} />
+              {content.family_recommendations.intro && (
+                <p className="mb-3 text-sm text-muted-foreground whitespace-pre-line">
+                  {content.family_recommendations.intro}
+                </p>
+              )}
+              <BulletList items={content.family_recommendations.items} />
+            </Section>
+          )}
+          {content.closing?.body && (
+            <Section title="Finalización del programa">
+              <p className="text-sm text-foreground whitespace-pre-line">{content.closing.body}</p>
+            </Section>
+          )}
+          {content.legal_notice?.body && (
+            <Section title="Aviso legal">
+              <p className="text-xs text-muted-foreground whitespace-pre-line">
+                {content.legal_notice.body}
+              </p>
             </Section>
           )}
         </>
@@ -157,20 +281,12 @@ function BulletList({ items }: { items: string[] }) {
     </ul>
   );
 }
-function SubSections({ sections }: { sections: { title: string; body?: string; items?: string[] }[] }) {
+function Row({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
   return (
-    <div className="flex flex-col gap-4">
-      {sections.map((s, i) => (
-        <div key={i} className="rounded-2xl border border-border/60 bg-background p-4">
-          <p className="font-medium text-foreground">{s.title}</p>
-          {s.body && <p className="mt-1 text-sm text-muted-foreground whitespace-pre-line">{s.body}</p>}
-          {s.items && s.items.length > 0 && (
-            <div className="mt-2">
-              <BulletList items={s.items} />
-            </div>
-          )}
-        </div>
-      ))}
+    <div className="grid grid-cols-[7rem_1fr] gap-2">
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="text-sm text-foreground whitespace-pre-line">{value}</dd>
     </div>
   );
 }
