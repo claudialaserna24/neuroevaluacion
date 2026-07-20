@@ -26,7 +26,33 @@ function AdminHome() {
     queryFn: () => fn(),
   });
 
-  if (q.isLoading) return <p className="py-12 text-center text-sm text-muted-foreground">Cargando…</p>;
+  if (q.isPending) {
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-32 animate-pulse rounded-3xl bg-card ring-1 ring-border/50"
+          />
+        ))}
+      </div>
+    );
+  }
+  if (q.isError) {
+    return (
+      <div className="rounded-3xl bg-card p-6 text-sm ring-1 ring-border/50">
+        <p className="text-destructive">
+          No pudimos cargar el resumen del panel.
+        </p>
+        <button
+          onClick={() => q.refetch()}
+          className="mt-3 inline-flex items-center rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
   if (!q.data) return null;
   const d = q.data;
   const revenue = Object.entries(d.revenueByCurrency)
@@ -48,7 +74,12 @@ function AdminHome() {
     { icon: Bot, label: "Conversaciones Moholka", value: d.moholkaConversations },
     { icon: CreditCard, label: "Pagos aprobados", value: d.paymentsApproved },
     { icon: Wallet, label: "Recaudo total", value: revenue, isString: true },
-    { icon: Activity, label: "Usuarios activos (30d)", value: d.activeUsers30d },
+    {
+      icon: Activity,
+      label: "Usuarios activos (30d)",
+      value: d.activeUsers30d ?? "—",
+      isString: d.activeUsers30d === null,
+    },
   ];
 
   return (

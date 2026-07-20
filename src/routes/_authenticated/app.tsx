@@ -18,11 +18,16 @@ export const Route = createFileRoute("/_authenticated/app")({
 
 function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdmin =
+    pathname === "/app/admin" || pathname.startsWith("/app/admin/");
   // Admin subtree uses its own layout (AdminSidebar); skip the family shell.
-  if (pathname === "/app/admin" || pathname.startsWith("/app/admin/")) {
+  if (isAdmin) {
     return <Outlet />;
   }
+  return <FamilyShell />;
+}
 
+function FamilyShell() {
   const fetchDashboard = useServerFn(getFamilyDashboard);
   const dashboard = useQuery({
     queryKey: ["family-dashboard"],

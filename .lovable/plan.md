@@ -1,89 +1,46 @@
 ## Diagnóstico
 
-### Causa raíz confirmada: la referencia Wompi nunca se guarda en la base de datos
+Al entrar `holguinmonika@gmail.com` a `/app/admin`, el menú titila y no responde. Causa raíz identificada por lectura del código (aún **por confirmar en runtime** con una prueba real):
 
-**Evidencia de la BD** (últimos 4 pagos, incluidos los intentos de hoy):
+1. **Violación de reglas de hooks en `src/routes/_authenticated/app.tsx`** — el layout hace un `return <Outlet />` condicionado al pathname *antes* de llamar `useServerFn(getFamilyDashboard)` y `useQuery(...)`. En rutas admin se saltan esos hooks; al navegar entre ítems del `AdminSidebar` React detecta cambios en el número de hooks y remonta el árbol → se ve como parpadeo del sidebar y clicks perdidos.
+2. **Anidamiento de layouts** — por la convención flat, `app.admin.tsx` es hijo de `app.tsx`, así que el layout familiar envuelve al layout admin. Hoy se "esquiva" con el `if` anterior; conviene separarlo limpiamente.
+3. **`getAdminOverview` lento/frágil** — recorre hasta 20 páginas de `supabaseAdmin.auth.admin.listUsers` en el request del dashboard. Bloquea el primer render y, si falla, deja `isLoading` alto. `listAdminFamilies` también hace un `getUserById` por cada perfil (N+1).
+4. **`AdminHome` usa `q.isLoading`** (semántica de TanStack Query v4). Con v5 conviene `isPending` para evitar estados intermedios raros.
 
-| id | status | wompi_reference | wompi_transaction_id | created_at == updated_at |
-|---|---|---|---|---|
-| 0c386dc2… | pending | **NULL** | NULL | sí |
-| d65720a7… | pending | **NULL** | NULL | sí |
-| 2bf6807d… | pending | **NULL** | NULL | sí |
-| 00dca541… | pending | **NULL** | NULL | sí |
+## Cambios
 
-Los 4 pagos quedaron en `pending` con `wompi_reference = NULL`.
+1. Refactor de `src/routes/_authenticated/app.tsx`:
+   - Extraer el shell familiar a un componente `FamilyShell` que contenga los hooks (`useServerFn`, `useQuery`, `MoholkaFloatingButton`).
+   - `AppLayout` decide por pathname y renderiza `<FamilyShell />` o `<Outlet />`. Los hooks quedan dentro de `FamilyShell`, no condicionados.
 
-**Por qué:** la tabla `public.payments` tiene solo tres policies RLS: `INSERT own`, `SELECT own`, `admin SELECT`. **No existe policy de UPDATE.** En `createPendingPayment` (src/lib/payments.functions.ts:44-47) hacemos:
+2. `src/routes/_authenticated/app.admin.tsx`:
+   - Mantener `SidebarProvider` + `AdminSidebar` + `SidebarInset`.
+   - Confirmar que el `beforeLoad` no encadena redirects: si `has_role` falla o devuelve `null`, mostrar un fallback "Sin permisos" en vez de `redirect({ to: "/app" })` (que puede ping-pongear si el usuario también carece de patient).
+   - Agregar `errorComponent` y `pendingComponent` en la ruta admin para evitar pantallas en blanco durante fallos del overview.
 
-```ts
-await supabase.from("payments").insert({ ... }).select("id").single(); // OK
-const reference = `NP-${inserted.id.slice(0, 8).toUpperCase()}`;
-await supabase.from("payments").update({ wompi_reference: reference }).eq("id", inserted.id); // 0 filas afectadas, sin error
-```
+3. `src/lib/admin/overview.functions.ts`:
+   - `getAdminOverview`: paralelizar la sección de `activeUsers30d` con timeout corto (2s) y catch silencioso. Si falla, retornar `activeUsers30d: null` y mostrar "—" en la card.
+   - `listAdminFamilies`: reemplazar el bucle `getUserById` por una sola llamada `admin.listUsers` paginada mapeada por id (o mover email/last_sign_in a una vista/función SQL). Reduce N+1.
+   - Añadir `try/catch` global para que un fallo puntual no tumbe todo el payload.
 
-El UPDATE se ejecuta como el usuario autenticado; RLS lo bloquea silenciosamente (Supabase no lanza error, solo devuelve 0 filas). El pago avanza al checkout de Wompi con la referencia en la URL, pero **la BD nunca la almacena**.
+4. `src/routes/_authenticated/app.admin.index.tsx`:
+   - Usar `q.isPending` en vez de `q.isLoading`.
+   - Renderizar el grid con skeletons en vez de un placeholder centrado (evita salto de layout).
+   - Manejar `q.isError` con un mensaje claro y botón "Reintentar" (`q.refetch()`).
 
-### Cascada resultante (explica exactamente lo que viste)
+5. Verificación en runtime (después de aplicar):
+   - Login con `holguinmonika@gmail.com` vía Playwright.
+   - Navegar `/app/admin` → `/app/admin/familias` → `/app/admin/pacientes` sin recargar; confirmar que el sidebar no parpadea y los clicks navegan.
+   - Revisar consola: 0 warnings de "Rendered fewer hooks than expected".
 
-1. **Wompi:** el webhook SÍ llega y la firma SÍ valida (el código lo maneja correctamente). El evento llega con status `APPROVED`.
-2. **Webhook (wompi-webhook.ts:96-104):** busca el pago con `.eq("wompi_reference", reference)`. Como `wompi_reference` es NULL en BD, `payment` es null → registra `"[wompi-webhook] payment not found <reference>"` y devuelve `ok`. **Nunca actualiza el pago ni la hoja de ruta.**
-3. **Base de datos post-pago:**
-   - `payments.status` = `pending` (nunca cambia)
-   - `payments.wompi_transaction_id` = NULL
-   - `payments.paid_at` = NULL
-   - `neurodevelopment_roadmaps.plan_status` = `locked`
-   - `plan_generation_status` = `pending`
-   - `plan_activated_at` = NULL
-4. **Skill:** **nunca se ejecuta.** El disparo `generateInteractivePlan` está dentro del bloque `if (upper === "APPROVED")`, pero antes salimos con "payment not found".
-5. **Motor de generación:** no llega a consultar assessment / hoja de ruta / CEREBRO.
-6. **UI `/checkout/return`:** sondea `getPaymentStatus` cada 2s hasta 20 intentos. El status se mantiene `pending`, `planStatus = locked`. A los ~40s cae al ramal `cancelled` → muestra **"Has cancelado el proceso de pago"** (que es engañoso: el pago sí se aprobó, solo que el backend nunca supo cuál era el pago).
+## Detalles técnicos
 
-### El "primer error real"
+- Convención flat de TanStack Router hace que `app.admin.tsx` sea child de `app.tsx`; por eso no se puede evitar que `AppLayout` monte. La solución correcta es meter los hooks del shell familiar dentro de un subcomponente montado solo cuando corresponde.
+- `listUsers` de Auth Admin acepta hasta 1000/page; una sola página cubre la base actual y elimina el N+1 en `listAdminFamilies`.
+- El `AdminSidebar` es `collapsible="offcanvas"`; en desktop debe verse siempre. El trigger del header (`app.admin.tsx`) queda accesible en ambos estados.
 
-No hay una excepción lanzada; el fallo es un **UPDATE bloqueado por RLS que devuelve 0 filas sin error**, seguido de un mensaje `warn` en el webhook: `"[wompi-webhook] payment not found NP-XXXXXXXX"`. Ese es el mensaje técnico que provoca el fallo.
+## Fuera de alcance
 
-## Corrección
-
-### 1. Eliminar el UPDATE post-insert (raíz del problema)
-
-En `src/lib/payments.functions.ts` `createPendingPayment`:
-- Generar el `id` del pago con `crypto.randomUUID()` **antes** del insert.
-- Derivar `reference = 'NP-' + id.slice(0,8).toUpperCase()` con ese id.
-- Insertar en una sola operación con `id` y `wompi_reference` ya presentes.
-- Eliminar el UPDATE posterior.
-
-Ventaja: los usuarios nunca necesitan permiso de UPDATE sobre `payments`; las transiciones de estado siguen siendo exclusivas del webhook vía `supabaseAdmin`. Esto es coherente con el modelo actual.
-
-### 2. Backfill de los pagos existentes (opcional, para no perder los intentos previos)
-
-Migración de datos (`INSERT`/`UPDATE` vía tool de datos) que rellena `wompi_reference` en los 4 pagos huérfanos aplicando la misma fórmula `NP-<id[:8].upper()>`. Así, si Wompi reintenta el webhook, se podrán conciliar.
-
-### 3. Mejorar el mensaje de la UI cuando el sondeo agota intentos
-
-En `src/routes/checkout.return.tsx`, el ramal `cancelled` actual dice literalmente "Has cancelado el proceso de pago". Cambiarlo por un estado neutral (por ejemplo `pending_verification`) que diga "Estamos confirmando tu pago con el banco. Recibirás la confirmación en breve" con enlaces a reintentar/refrescar. Esto evita el mensaje engañoso incluso si un webhook llega tarde.
-
-### 4. Verificación end-to-end en Sandbox
-
-Después de aplicar (1) y (2):
-- Iniciar un checkout desde `/checkout?patient=<id>`. Confirmar que el nuevo pago quedó con `wompi_reference` **no nulo** en BD.
-- Pagar con tarjeta de prueba Wompi Sandbox aprobada.
-- Al volver a `/checkout/return`, verificar en BD:
-  - `payments.status` → `paid`, `wompi_transaction_id` no nulo, `paid_at` con timestamp.
-  - `neurodevelopment_roadmaps.plan_status` → `unlocked`, `unlocked_at` no nulo.
-  - `plan_generation_status` → transiciona `pending` → `generating` → `ready` (revisar generator).
-- Revisar logs con `server-function-logs` filtrando `wompi-webhook` y `plan skill` para confirmar la ejecución de la Skill.
-- Confirmar la redirección automática al Plan Interactivo desde la pantalla de retorno.
-
-### 5. Reporte final
-
-Al terminar, entregar un reporte con:
-- Causa: UPDATE bloqueado por RLS en `payments`, referencia nunca persistida.
-- Fix: referencia calculada e insertada en la misma operación.
-- Evidencia: fila del pago de prueba pasando de `pending` → `paid` y plan `locked` → `unlocked` → `ready`.
-
-### Detalles técnicos
-
-- No se modifica el esquema; no se agregan policies de UPDATE (mantenemos el principio de que solo el service role muta estados de pago).
-- El webhook queda intacto: solo cambia el productor de la referencia.
-- No se toca la lógica de firma ni el consumo de la API de Wompi.
-- Si al ejecutar la prueba se descubre un fallo secundario en el generator (por ejemplo la Skill lanzando excepción al leer CEREBRO), se resuelve como paso adicional después de confirmar que el webhook ya llega al bloque `APPROVED`.
+- Cambiar el diseño visual del panel admin.
+- Mover el árbol admin fuera de `_authenticated/app/*` (implicaría reescribir todas las rutas hijas y los links del sidebar).
+- Optimizaciones de RLS/consultas más allá del N+1 de familias.
