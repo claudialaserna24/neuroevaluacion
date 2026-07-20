@@ -267,6 +267,8 @@ export type Database = {
           plan_status: Database["public"]["Enums"]["plan_status"]
           priorities: Json
           reflexes: Json
+          regenerated_at: string | null
+          regenerated_by: string | null
           unlocked_at: string | null
           user_id: string
         }
@@ -286,6 +288,8 @@ export type Database = {
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priorities: Json
           reflexes: Json
+          regenerated_at?: string | null
+          regenerated_by?: string | null
           unlocked_at?: string | null
           user_id: string
         }
@@ -305,6 +309,8 @@ export type Database = {
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priorities?: Json
           reflexes?: Json
+          regenerated_at?: string | null
+          regenerated_by?: string | null
           unlocked_at?: string | null
           user_id?: string
         }
@@ -318,6 +324,41 @@ export type Database = {
           },
           {
             foreignKeyName: "neurodevelopment_roadmaps_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          neuropsicologo_id: string
+          patient_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          neuropsicologo_id: string
+          patient_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          neuropsicologo_id?: string
+          patient_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_assignments_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
@@ -519,6 +560,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_patient: {
+        Args: { _patient_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -526,10 +571,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       answer_scale: "cog3" | "func10" | "reflex5"
-      app_role: "usuario" | "administrador"
+      app_role: "usuario" | "administrador" | "neuropsicologo"
       assessment_module: "cognitive" | "functional" | "reflex"
       assessment_status: "in_progress" | "completed"
       payment_status: "pending" | "paid" | "failed" | "cancelled" | "rejected"
@@ -662,7 +708,7 @@ export const Constants = {
   public: {
     Enums: {
       answer_scale: ["cog3", "func10", "reflex5"],
-      app_role: ["usuario", "administrador"],
+      app_role: ["usuario", "administrador", "neuropsicologo"],
       assessment_module: ["cognitive", "functional", "reflex"],
       assessment_status: ["in_progress", "completed"],
       payment_status: ["pending", "paid", "failed", "cancelled", "rejected"],
