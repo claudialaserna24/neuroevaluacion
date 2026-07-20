@@ -19,6 +19,7 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppPlanInteractivoRouteImport } from './routes/_authenticated/app.plan-interactivo'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
 import { Route as AuthenticatedAppPacientesRouteImport } from './routes/_authenticated/app.pacientes'
 import { Route as AuthenticatedAppInformeRouteImport } from './routes/_authenticated/app.informe'
@@ -79,6 +80,12 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppPlanInteractivoRoute =
+  AuthenticatedAppPlanInteractivoRouteImport.update({
+    id: '/plan-interactivo',
+    path: '/plan-interactivo',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/app/informe': typeof AuthenticatedAppInformeRoute
   '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
+  '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
@@ -151,6 +159,7 @@ export interface FileRoutesByTo {
   '/app/informe': typeof AuthenticatedAppInformeRoute
   '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
+  '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
@@ -171,6 +180,7 @@ export interface FileRoutesById {
   '/_authenticated/app/informe': typeof AuthenticatedAppInformeRoute
   '/_authenticated/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
+  '/_authenticated/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/app/informe'
     | '/app/pacientes'
     | '/app/perfil'
+    | '/app/plan-interactivo'
     | '/app/'
     | '/app/pacientes/$patientId'
   fileRoutesByTo: FileRoutesByTo
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/app/informe'
     | '/app/pacientes'
     | '/app/perfil'
+    | '/app/plan-interactivo'
     | '/app'
     | '/app/pacientes/$patientId'
   id:
@@ -227,6 +239,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/informe'
     | '/_authenticated/app/pacientes'
     | '/_authenticated/app/perfil'
+    | '/_authenticated/app/plan-interactivo'
     | '/_authenticated/app/'
     | '/_authenticated/app/pacientes/$patientId'
   fileRoutesById: FileRoutesById
@@ -314,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/plan-interactivo': {
+      id: '/_authenticated/app/plan-interactivo'
+      path: '/plan-interactivo'
+      fullPath: '/app/plan-interactivo'
+      preLoaderRoute: typeof AuthenticatedAppPlanInteractivoRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/perfil': {
       id: '/_authenticated/app/perfil'
       path: '/perfil'
@@ -386,6 +406,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppInformeRoute: typeof AuthenticatedAppInformeRoute
   AuthenticatedAppPacientesRoute: typeof AuthenticatedAppPacientesRouteWithChildren
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
+  AuthenticatedAppPlanInteractivoRoute: typeof AuthenticatedAppPlanInteractivoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
@@ -394,6 +415,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppInformeRoute: AuthenticatedAppInformeRoute,
   AuthenticatedAppPacientesRoute: AuthenticatedAppPacientesRouteWithChildren,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
+  AuthenticatedAppPlanInteractivoRoute: AuthenticatedAppPlanInteractivoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
 
