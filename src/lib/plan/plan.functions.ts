@@ -3,6 +3,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { MANUAL_BUCKET, MANUAL_OBJECT_PATH, SIGNED_URL_TTL } from "./constants";
 
+async function manualObjectExists(): Promise<boolean> {
+  const { supabaseAdmin } = await import(
+    "@/integrations/supabase/client.server"
+  );
+  const { data, error } = await supabaseAdmin.storage
+    .from(MANUAL_BUCKET)
+    .list("", { search: MANUAL_OBJECT_PATH, limit: 1 });
+  if (error || !data) return false;
+  return data.some((o) => o.name === MANUAL_OBJECT_PATH);
+}
+
 const patientInput = z.object({ patientId: z.string().uuid() });
 
 type BlockedReason =
@@ -44,6 +55,7 @@ export const getInteractivePlan = createServerFn({ method: "GET" })
       return { blocked: true as const, reason: "not_unlocked" as BlockedReason };
     }
 
+    const manual_available = await manualObjectExists();
     return {
       blocked: false as const,
       patient,
@@ -57,7 +69,7 @@ export const getInteractivePlan = createServerFn({ method: "GET" })
         plan_activated_at: roadmap.plan_activated_at ?? roadmap.unlocked_at,
         plan_pdf_url: roadmap.plan_pdf_url,
       },
-      manual_available: MANUAL_OBJECT_PATH !== null,
+      manual_available,
     };
   });
 
@@ -92,9 +104,6 @@ export const getManualDownloadUrl = createServerFn({ method: "GET" })
   .inputValidator((d: { patientId: string }) => patientInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertUnlocked(context.supabase, context.userId, data.patientId);
-    if (!MANUAL_OBJECT_PATH) {
-      return { available: false as const };
-    }
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );
