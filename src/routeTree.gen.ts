@@ -15,10 +15,12 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedConsentimientoRouteImport } from './routes/_authenticated/consentimiento'
+import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppPlanInteractivoRouteImport } from './routes/_authenticated/app.plan-interactivo'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
 import { Route as AuthenticatedAppPacientesRouteImport } from './routes/_authenticated/app.pacientes'
 import { Route as AuthenticatedAppInformeRouteImport } from './routes/_authenticated/app.informe'
@@ -57,6 +59,11 @@ const AuthenticatedConsentimientoRoute =
     path: '/consentimiento',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCheckoutRoute = AuthenticatedCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   id: '/app',
   path: '/app',
@@ -79,6 +86,12 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppPlanInteractivoRoute =
+  AuthenticatedAppPlanInteractivoRouteImport.update({
+    id: '/plan-interactivo',
+    path: '/plan-interactivo',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
@@ -126,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/checkout': typeof AuthenticatedCheckoutRoute
   '/consentimiento': typeof AuthenticatedConsentimientoRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -134,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/app/informe': typeof AuthenticatedAppInformeRoute
   '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
+  '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
@@ -143,6 +158,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/checkout': typeof AuthenticatedCheckoutRoute
   '/consentimiento': typeof AuthenticatedConsentimientoRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -151,6 +167,7 @@ export interface FileRoutesByTo {
   '/app/informe': typeof AuthenticatedAppInformeRoute
   '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
+  '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
@@ -163,6 +180,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/_authenticated/consentimiento': typeof AuthenticatedConsentimientoRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -171,6 +189,7 @@ export interface FileRoutesById {
   '/_authenticated/app/informe': typeof AuthenticatedAppInformeRoute
   '/_authenticated/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
+  '/_authenticated/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
@@ -183,6 +202,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/app'
+    | '/checkout'
     | '/consentimiento'
     | '/onboarding'
     | '/.lovable/oauth/consent'
@@ -191,6 +211,7 @@ export interface FileRouteTypes {
     | '/app/informe'
     | '/app/pacientes'
     | '/app/perfil'
+    | '/app/plan-interactivo'
     | '/app/'
     | '/app/pacientes/$patientId'
   fileRoutesByTo: FileRoutesByTo
@@ -200,6 +221,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/checkout'
     | '/consentimiento'
     | '/onboarding'
     | '/.lovable/oauth/consent'
@@ -208,6 +230,7 @@ export interface FileRouteTypes {
     | '/app/informe'
     | '/app/pacientes'
     | '/app/perfil'
+    | '/app/plan-interactivo'
     | '/app'
     | '/app/pacientes/$patientId'
   id:
@@ -219,6 +242,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/app'
+    | '/_authenticated/checkout'
     | '/_authenticated/consentimiento'
     | '/_authenticated/onboarding'
     | '/.lovable/oauth/consent'
@@ -227,6 +251,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/informe'
     | '/_authenticated/app/pacientes'
     | '/_authenticated/app/perfil'
+    | '/_authenticated/app/plan-interactivo'
     | '/_authenticated/app/'
     | '/_authenticated/app/pacientes/$patientId'
   fileRoutesById: FileRoutesById
@@ -286,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConsentimientoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/checkout': {
+      id: '/_authenticated/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof AuthenticatedCheckoutRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app': {
       id: '/_authenticated/app'
       path: '/app'
@@ -312,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/plan-interactivo': {
+      id: '/_authenticated/app/plan-interactivo'
+      path: '/plan-interactivo'
+      fullPath: '/app/plan-interactivo'
+      preLoaderRoute: typeof AuthenticatedAppPlanInteractivoRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/perfil': {
@@ -386,6 +425,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppInformeRoute: typeof AuthenticatedAppInformeRoute
   AuthenticatedAppPacientesRoute: typeof AuthenticatedAppPacientesRouteWithChildren
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
+  AuthenticatedAppPlanInteractivoRoute: typeof AuthenticatedAppPlanInteractivoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
@@ -394,6 +434,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppInformeRoute: AuthenticatedAppInformeRoute,
   AuthenticatedAppPacientesRoute: AuthenticatedAppPacientesRouteWithChildren,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
+  AuthenticatedAppPlanInteractivoRoute: AuthenticatedAppPlanInteractivoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
 
@@ -402,12 +443,14 @@ const AuthenticatedAppRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
+  AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRoute
   AuthenticatedConsentimientoRoute: typeof AuthenticatedConsentimientoRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
+  AuthenticatedCheckoutRoute: AuthenticatedCheckoutRoute,
   AuthenticatedConsentimientoRoute: AuthenticatedConsentimientoRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
 }

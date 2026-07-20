@@ -202,21 +202,21 @@ function InformePage() {
         </p>
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => alert("Próximamente: pago y desbloqueo del Plan Interactivo.")}
+          <Link
+            to="/checkout"
+            search={{ patient }}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
           >
             <Lock className="h-4 w-4" />
             Desbloquear mi Plan Interactivo
-          </button>
-          <button
-            type="button"
-            onClick={() => alert("Próximamente: detalle completo del plan.")}
+          </Link>
+          <Link
+            to="/app/plan-interactivo"
+            search={{ patient }}
             className="inline-flex items-center justify-center rounded-full border border-primary/40 px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10"
           >
             Conocer todo lo que incluye
-          </button>
+          </Link>
         </div>
       </section>
     </article>

@@ -74,6 +74,27 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
   const [cursor, setCursor] = useState(0);
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [introShown, setIntroShown] = useState<Record<string, boolean>>({});
+  const introStorageKey = `neuroplan.moduleIntro.${patientId}`;
+
+  // Load intro state from localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(introStorageKey);
+      if (raw) setIntroShown(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, [introStorageKey]);
+
+  function markIntroShown(mod: string) {
+    setIntroShown((prev) => {
+      const next = { ...prev, [mod]: true };
+      try {
+        window.localStorage.setItem(introStorageKey, JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  }
 
   // Load questions + state
   useEffect(() => {
@@ -152,6 +173,16 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
   const allAnswered = totalAnswered >= total;
   const options = SCALE_OPTIONS[currentQ.scale];
   const selectedValue = answers.get(currentQ.id);
+
+  // Show module intro before the first unseen question of a module
+  if (!introShown[currentQ.module]) {
+    return (
+      <ModuleIntro
+        module={currentQ.module}
+        onStart={() => markIntroShown(currentQ.module)}
+      />
+    );
+  }
 
   const renderQuestionText = (text: string) => {
     const idx = text.indexOf(": ");
@@ -249,8 +280,9 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
       </div>
 
       {/* Controles */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <button
+          type="button"
           onClick={() => setCursor(Math.max(0, cursor - 1))}
           disabled={cursor === 0}
           className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-40"
@@ -276,3 +308,124 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
     </div>
   );
 }
+
+function ModuleIntro({
+  module,
+  onStart,
+}: {
+  module: Question["module"];
+  onStart: () => void;
+}) {
+  const content = MODULE_INTRO[module];
+  return (
+    <div className="mx-auto max-w-lg">
+      <div className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-border/50">
+        <p className="text-xs font-medium uppercase tracking-wide text-primary">
+          {MODULE_LABEL[module].label}
+        </p>
+        <h1 className="mt-2 font-serif text-2xl leading-tight text-foreground">
+          {content.title}
+        </h1>
+        <div className="mt-4 space-y-3 text-sm leading-relaxed text-foreground">
+          {content.body}
+        </div>
+        <button
+          type="button"
+          onClick={onStart}
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+        >
+          {content.cta}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const MODULE_INTRO: Record<
+  Question["module"],
+  { title: string; body: React.ReactNode; cta: string }
+> = {
+  cognitive: {
+    title: "Perfil Cognitivo",
+    cta: "Comenzar",
+    body: (
+      <>
+        <p>
+          En este módulo encontrarás situaciones relacionadas con el
+          comportamiento y el aprendizaje de tu hijo. Responde pensando en cómo
+          se comporta habitualmente, no en situaciones aisladas.
+        </p>
+        <p className="font-medium text-foreground">
+          Selecciona una única respuesta por pregunta:
+        </p>
+        <ul className="space-y-1.5 pl-4">
+          <li>
+            <strong>Siempre:</strong> ocurre con mucha frecuencia o casi siempre.
+          </li>
+          <li>
+            <strong>Algunas veces:</strong> ocurre de forma ocasional.
+          </li>
+          <li>
+            <strong>Nunca:</strong> no suele presentarse.
+          </li>
+        </ul>
+        <p className="text-muted-foreground">
+          No existen respuestas correctas o incorrectas. Lo importante es
+          responder con la mayor sinceridad posible.
+        </p>
+      </>
+    ),
+  },
+  functional: {
+    title: "Evaluación Funcional",
+    cta: "Continuar",
+    body: (
+      <>
+        <p>
+          Ahora responderás preguntas relacionadas con el procesamiento
+          sensorial y el funcionamiento diario de tu hijo.
+        </p>
+        <p className="font-medium text-foreground">
+          Para cada situación deberás considerar:
+        </p>
+        <ul className="space-y-2 pl-4">
+          <li>
+            <strong>Frecuencia:</strong> indica con qué frecuencia ocurre la
+            situación. Escala de 0 a 10.
+          </li>
+          <li>
+            <strong>Nivel de compromiso:</strong> indica cuánto afecta esa
+            situación la vida diaria del niño. Escala de 0 a 10.
+          </li>
+        </ul>
+        <p className="text-muted-foreground">
+          Responde pensando en el comportamiento habitual de tu hijo.
+        </p>
+      </>
+    ),
+  },
+  reflex: {
+    title: "Patrones Asociados a Reflejos Primitivos",
+    cta: "Comenzar",
+    body: (
+      <>
+        <p>
+          En este módulo responderás preguntas relacionadas con comportamientos
+          que podrían estar asociados a algunos reflejos primitivos.
+        </p>
+        <p className="text-muted-foreground">
+          Las respuestas no constituyen un diagnóstico ni reemplazan una
+          valoración profesional.
+        </p>
+        <p className="font-medium text-foreground">Selecciona un valor entre:</p>
+        <ul className="space-y-1.5 pl-4">
+          <li><strong>0</strong> = No se presenta</li>
+          <li><strong>1</strong> = Muy poco</li>
+          <li><strong>2</strong> = Algunas veces</li>
+          <li><strong>3</strong> = Frecuente</li>
+          <li><strong>4</strong> = Muy frecuente</li>
+        </ul>
+      </>
+    ),
+  },
+};
