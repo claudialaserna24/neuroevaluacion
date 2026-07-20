@@ -26,25 +26,30 @@ export const createPendingPayment = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!patient) throw new Error("Paciente no encontrado");
 
+    // Pre-generamos el id para poder insertar la referencia Wompi en una sola
+    // operación. Antes hacíamos INSERT + UPDATE, pero la tabla payments no tiene
+    // policy de UPDATE para el owner (por diseño: solo el service role muta el
+    // estado del pago), así que el UPDATE quedaba silenciosamente bloqueado por
+    // RLS y wompi_reference terminaba NULL — con lo cual el webhook nunca
+    // encontraba el pago post-aprobación.
+    const paymentId = crypto.randomUUID();
+    const reference = `NP-${paymentId.slice(0, 8).toUpperCase()}`;
+
     const { data: inserted, error } = await supabase
       .from("payments")
       .insert({
+        id: paymentId,
         user_id: userId,
         patient_id: data.patientId,
         assessment_id: data.assessmentId ?? null,
         amount: PLAN_PRICE_USD,
         currency: PLAN_CURRENCY,
         status: "pending",
+        wompi_reference: reference,
       })
       .select("id")
       .single();
     if (error) throw error;
-
-    const reference = `NP-${inserted.id.slice(0, 8).toUpperCase()}`;
-    await supabase
-      .from("payments")
-      .update({ wompi_reference: reference })
-      .eq("id", inserted.id);
 
     // Construye la URL del Web Checkout de Wompi con firma de integridad.
     const { generateIntegritySignature, getWompiConfig } = await import(
