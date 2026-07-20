@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
+import { Route as ApiMoholkaRouteImport } from './routes/api/moholka'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedConsentimientoRouteImport } from './routes/_authenticated/consentimiento'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
@@ -57,6 +58,11 @@ const IndexRoute = IndexRouteImport.update({
 const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
   id: '/checkout/return',
   path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMoholkaRoute = ApiMoholkaRouteImport.update({
+  id: '/api/moholka',
+  path: '/api/moholka',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/consentimiento': typeof AuthenticatedConsentimientoRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/api/moholka': typeof ApiMoholkaRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/consentimiento': typeof AuthenticatedConsentimientoRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/api/moholka': typeof ApiMoholkaRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/_authenticated/consentimiento': typeof AuthenticatedConsentimientoRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/api/moholka': typeof ApiMoholkaRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/consentimiento'
     | '/onboarding'
+    | '/api/moholka'
     | '/checkout/return'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/consentimiento'
     | '/onboarding'
+    | '/api/moholka'
     | '/checkout/return'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/_authenticated/checkout'
     | '/_authenticated/consentimiento'
     | '/_authenticated/onboarding'
+    | '/api/moholka'
     | '/checkout/return'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -339,6 +351,7 @@ export interface RootRouteChildren {
   McpRoute: typeof McpRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  ApiMoholkaRoute: typeof ApiMoholkaRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -380,6 +393,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout/return'
       fullPath: '/checkout/return'
       preLoaderRoute: typeof CheckoutReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/moholka': {
+      id: '/api/moholka'
+      path: '/api/moholka'
+      fullPath: '/api/moholka'
+      preLoaderRoute: typeof ApiMoholkaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/onboarding': {
@@ -608,6 +628,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  ApiMoholkaRoute: ApiMoholkaRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
