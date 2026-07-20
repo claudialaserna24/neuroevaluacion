@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { createHmac } from "crypto";
 
 const eventSchema = z.object({
   event: z.string(),
@@ -126,37 +125,9 @@ export const Route = createFileRoute("/api/public/wompi-webhook")({
               })
               .eq("patient_id", payment.patient_id)
               .eq("assessment_id", payment.assessment_id);
-
-            // Dispara la Skill en su propia invocación de Worker vía HTTP.
-            // No bloqueamos la respuesta al webhook: en Cloudflare Workers
-            // una promesa "fire-and-forget" muere con la respuesta, así que
-            // la Skill vive en otro request con su propio presupuesto de CPU.
-            try {
-              const origin = new URL(request.url).origin;
-              const payload = JSON.stringify({
-                patientId: payment.patient_id,
-              });
-              const eventsKey = process.env.WOMPI_EVENTS_KEY ?? "";
-              const signature = createHmac("sha256", eventsKey)
-                .update(payload)
-                .digest("hex");
-              // No await — que se ejecute en su propio worker.
-              void fetch(`${origin}/api/public/plan-generate`, {
-                method: "POST",
-                headers: {
-                  "content-type": "application/json",
-                  "x-internal-signature": signature,
-                },
-                body: payload,
-              }).catch((err) => {
-                console.error("[wompi-webhook] plan trigger fetch failed", err);
-              });
-              console.info("[wompi-webhook] plan trigger dispatched", {
-                patientId: payment.patient_id,
-              });
-            } catch (err) {
-              console.error("[wompi-webhook] plan trigger setup failed", err);
-            }
+            console.info("[wompi-webhook] plan unlocked; awaiting client-side trigger", {
+              patientId: payment.patient_id,
+            });
           }
         } else if (["DECLINED", "VOIDED", "ERROR"].includes(upper)) {
           await supabaseAdmin

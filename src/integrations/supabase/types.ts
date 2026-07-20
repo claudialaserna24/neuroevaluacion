@@ -262,7 +262,9 @@ export type Database = {
           plan_activated_at: string | null
           plan_content: Json | null
           plan_generated_at: string | null
+          plan_generation_error: string | null
           plan_generation_status: string
+          plan_generation_status_updated_at: string | null
           plan_pdf_url: string | null
           plan_status: Database["public"]["Enums"]["plan_status"]
           priorities: Json
@@ -283,7 +285,9 @@ export type Database = {
           plan_activated_at?: string | null
           plan_content?: Json | null
           plan_generated_at?: string | null
+          plan_generation_error?: string | null
           plan_generation_status?: string
+          plan_generation_status_updated_at?: string | null
           plan_pdf_url?: string | null
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priorities: Json
@@ -304,7 +308,9 @@ export type Database = {
           plan_activated_at?: string | null
           plan_content?: Json | null
           plan_generated_at?: string | null
+          plan_generation_error?: string | null
           plan_generation_status?: string
+          plan_generation_status_updated_at?: string | null
           plan_pdf_url?: string | null
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priorities?: Json

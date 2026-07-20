@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { PLAN_PRICE_USD, PLAN_CURRENCY, PLAN_PRICE_COP, WOMPI_CURRENCY } from "./plan-pricing";
@@ -68,6 +67,7 @@ export const createPendingPayment = createServerFn({ method: "POST" })
     });
 
     // Origin del request para armar redirect-url absoluto.
+    const { getRequest } = await import("@tanstack/react-start/server");
     const req = getRequest();
     const origin =
       req?.headers.get("origin") ??
@@ -125,40 +125,9 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
         (rm as { plan_generation_status?: string } | null)?.plan_generation_status ?? null;
     }
 
-    // Fallback: si el pago está pagado y el desbloqueo ocurrió pero la Skill
-    // no arrancó o falló, re-disparamos el endpoint interno. Cubre el caso
-    // de que el fetch fire-and-forget del webhook se haya perdido.
-    if (
-      payment.status === "paid" &&
-      roadmap?.plan_status === "unlocked" &&
-      (planGenerationStatus === "pending" || planGenerationStatus === "failed")
-    ) {
-      try {
-        const { createHmac } = await import("crypto");
-        const req = getRequest();
-        const origin =
-          req?.headers.get("origin") ??
-          (req ? new URL(req.url).origin : "https://neuroevaluacion.lovable.app");
-        const payload = JSON.stringify({ patientId: payment.patient_id });
-        const eventsKey = process.env.WOMPI_EVENTS_KEY ?? "";
-        const signature = createHmac("sha256", eventsKey)
-          .update(payload)
-          .digest("hex");
-        void fetch(`${origin}/api/public/plan-generate`, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-internal-signature": signature,
-          },
-          body: payload,
-        }).catch(() => undefined);
-        console.info("[getPaymentStatus] plan trigger fallback dispatched", {
-          patientId: payment.patient_id,
-        });
-      } catch (err) {
-        console.warn("[getPaymentStatus] fallback failed", err);
-      }
-    }
+    // Nota: la generación del Plan se dispara desde /app/plan/{patientId}
+    // mediante startPlanGeneration, no desde aquí. Un fetch fire-and-forget
+    // desde este handler moriría con el response en Cloudflare Workers.
 
     return {
       paymentId: payment.id,
