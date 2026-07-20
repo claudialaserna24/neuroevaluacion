@@ -141,3 +141,38 @@ export const getPlanPdfDownloadUrl = createServerFn({ method: "GET" })
     }
     return { available: true as const, url: signed.signedUrl };
   });
+
+// ─── Administración del Manual Oficial ────────────────────────────────────────
+
+async function assertAdmin(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  userId: string,
+) {
+  const { data: isAdmin } = await supabase.rpc("has_role", {
+    _user_id: userId,
+    _role: "administrador",
+  });
+  if (!isAdmin) throw new Error("Acceso restringido");
+}
+
+export const getManualStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { data, error } = await supabaseAdmin.storage
+      .from(MANUAL_BUCKET)
+      .list("", { search: MANUAL_OBJECT_PATH, limit: 1 });
+    if (error) return { available: false as const, path: MANUAL_OBJECT_PATH };
+    const obj = data?.find((o) => o.name === MANUAL_OBJECT_PATH);
+    if (!obj) return { available: false as const, path: MANUAL_OBJECT_PATH };
+    return {
+      available: true as const,
+      path: MANUAL_OBJECT_PATH,
+      updated_at: obj.updated_at ?? obj.created_at ?? null,
+      size:
+        (obj.metadata as { size?: number } | null | undefined)?.size ?? null,
+    };
+  });
