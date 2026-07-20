@@ -1,86 +1,91 @@
-# Diagnóstico técnico del flujo post-pago
+## Causa raíz confirmada
 
-## Evidencia recogida (sin cambios aún)
+El disparo del generador nunca se ejecuta en Cloudflare Workers: los `void fetch(...)` fire-and-forget desde `wompi-webhook.ts` y `getPaymentStatus` mueren cuando el handler devuelve la Response, antes de que el request saliente llegue a `/api/public/plan-generate`. Por eso el roadmap queda en `plan_generation_status='pending'` para siempre. `ctx.waitUntil` no está expuesto en estos handlers de TanStack.
 
-### 1. Pago (tabla `payments`)
-Último intento (pruebas de hoy 22:24 UTC):
+## Solución: generación bajo demanda desde la pantalla del Plan
 
-| id (prefijo) | status  | wompi_reference | wompi_transaction_id | paid_at | created_at | updated_at |
-|---|---|---|---|---|---|---|
-| **2dad8ef5** | pending | **NULL** | NULL | NULL | 22:24:49 | 22:24:49 |
-| 0c386dc2 | pending | NP-0C386DC2 | NULL | NULL | 20:52:02 | **21:39:07** |
-| d65720a7 | pending | NP-D65720A7 | NULL | NULL | 20:48:19 | **21:39:07** |
-| 2bf6807d | pending | NP-2BF6807D | NULL | NULL | 20:38:04 | **21:39:07** |
+El disparo lo hace el cliente al aterrizar en `/app/plan/{patientId}`, dentro de un request awaited — así el isolate del Worker permanece vivo hasta que la IA termina. Sin cambios en Evaluación, Hoja de Ruta, integración Wompi ni diseño.
 
-Los pagos anteriores con `wompi_reference` no vinieron del INSERT: comparten exactamente el mismo `updated_at = 21:39:07` → fueron **el backfill** del turno anterior. El pago nuevo (22:24) **sigue insertando `wompi_reference` en NULL**, lo que significa que **el fix de `payments.functions.ts` no está desplegado en producción** (o la publicación no rehizo el bundle del server function).
+### 1. Migración de BD
 
-### 2. Webhook (`/api/public/wompi-webhook`)
-Logs del worker (última hora):
-```
-[22:26:05.269] POST /api/public/wompi-webhook → 200
-[22:26:06.632] [warn] [wompi-webhook] payment not found NP-2DAD8EF5
-```
-- Wompi **sí** llamó al webhook (~76 s después del insert).
-- La firma **pasó** la validación (si no, habría respondido 401).
-- El handler **buscó** por `wompi_reference = 'NP-2DAD8EF5'` y no encontró fila → devolvió 200 sin actualizar nada.
-- Nunca ejecutó el `UPDATE payments`, ni el `UPDATE neurodevelopment_roadmaps`, ni disparó la Skill.
+Añadir a `neurodevelopment_roadmaps`:
+- `plan_generation_status_updated_at timestamptz` — se actualiza en cada transición de `plan_generation_status`.
+- `plan_generation_error text` — mensaje técnico del último fallo.
 
-### 3. Estado de la Hoja de Ruta
-```
-plan_status = locked
-plan_generation_status = pending   (nunca escrito por este flujo)
-plan_activated_at = NULL
-unlocked_at = NULL
-```
-Consistente con "el webhook no encontró el pago".
+Trigger `BEFORE UPDATE`: si `plan_generation_status` cambia, setear `plan_generation_status_updated_at = now()`. Backfill inicial: `plan_generation_status_updated_at = COALESCE(plan_generated_at, updated_at, now())`.
 
-### 4. Skill "Generador del Plan Interactivo"
-No se llamó. El disparo vive dentro del branch `APPROVED` del webhook, y ese branch nunca se alcanzó porque el `.maybeSingle()` devolvió `null`.
+### 2. Nueva server fn `startPlanGeneration` (en `src/lib/plan/plan.functions.ts`)
 
-### 5. Generación
-No aplica: nunca llegó a `buildPlanInput`, ni a `queryCerebro`, ni al gateway.
+Autenticada con `requireSupabaseAuth`. Input: `{ patientId, force?: boolean }`.
 
-### 6. Logs
-Los únicos logs relevantes del último ciclo son los del webhook citados arriba. No hay stack traces del generador porque no se ejecutó. El polling de `getPaymentStatus` en `checkout.return.tsx` está haciendo lo correcto — encuentra `status='pending'` y por eso muestra "Estamos confirmando tu pago…" indefinidamente.
+Flujo:
+1. Verifica que existe pago `status='paid'` del `userId` para ese paciente (RLS + doble check).
+2. Lee roadmap más reciente: exige `plan_status='unlocked'`.
+3. Decide según `plan_generation_status`:
+   - `ready` → devuelve `{ status: 'ready' }`. Sin regeneración (idempotente). `force` se ignora salvo que el estado sea `failed` o un `generating` vencido.
+   - `generating` con `plan_generation_status_updated_at` < 3 min → devuelve `{ status: 'generating' }` (otro request ya está trabajando).
+   - `generating` vencido (≥ 3 min) → tratado como `failed`; permite tomar el lock.
+   - `pending` o `failed` → toma lock. `force: true` sólo puede transicionar desde `failed` o `generating` vencido; nunca desde `ready` ni desde un `generating` vivo.
+4. **Lock atómico** vía UPDATE condicional en un solo statement:
+   ```
+   UPDATE neurodevelopment_roadmaps
+   SET plan_generation_status='generating',
+       plan_generation_error=NULL
+   WHERE id=$roadmapId
+     AND plan_status='unlocked'
+     AND (
+       plan_generation_status IN ('pending','failed')
+       OR (plan_generation_status='generating'
+           AND plan_generation_status_updated_at < now() - interval '3 minutes')
+     )
+   RETURNING id;
+   ```
+   Si no devuelve filas, otro request ganó → responde `{ status: 'generating' }` sin llamar a la IA. Esto garantiza no-duplicación incluso con reintentos concurrentes del botón.
+5. Con el lock tomado, `await generateInteractivePlan(patientId, { skipLock: true })` en el mismo request. Al terminar responde `{ status: 'ready' }` o `{ status: 'failed', error }`.
+6. **Cualquier excepción** en el `try/catch`: UPDATE a `plan_generation_status='failed'`, `plan_generation_error = <mensaje serializado>`. Se propaga error al cliente sólo tras persistir el estado.
 
-## Causa raíz
+### 3. Ajustes a `src/lib/plan/skill/generator.ts`
 
-**Bug 1 (bloqueante hoy):** El fix a `createPendingPayment` que inserta `wompi_reference` junto con la fila **no está activo en la deployment publicada**. Cada nuevo pago sigue naciendo con `wompi_reference = NULL`, así que el webhook nunca cruza la referencia contra ninguna fila y termina el flujo en el `warn "payment not found"`.
+- Aceptar `{ skipLock?: boolean; force?: boolean }`. Cuando `skipLock` es true, saltar `tryLock` porque ya se hizo en `startPlanGeneration`.
+- Renovar `plan_generation_status_updated_at` implícitamente vía trigger.
+- En el `catch`, además de marcar `failed`, guardar `plan_generation_error` con el mensaje del error (`err instanceof Error ? err.message : String(err)`), truncado.
+- Mantener la escritura de `plan_content` + `plan_generation_status='ready'` + `plan_generated_at` al éxito.
 
-**Bug 2 (latente, aparecerá apenas se resuelva el Bug 1):** En el webhook, tras marcar el pago como `paid` y desbloquear el roadmap, la Skill se dispara con:
-```ts
-void (async () => { await generateInteractivePlan(payment.patient_id); })();
-```
-El handler retorna `new Response("ok")` inmediatamente. En Cloudflare Workers, una promesa fire-and-forget queda sin runtime en cuanto la respuesta se envía, salvo que se registre con `ctx.waitUntil(...)`. Resultado esperado: pago quedaría `paid`, roadmap `unlocked`, pero `plan_generation_status` se quedaría en `pending` (o `generating` si alcanza a tomar el lock) y la Skill nunca terminaría. Además `generateInteractivePlan` hace múltiples llamadas al gateway; excede con holgura los ~30 s de CPU de un handler de Worker.
+### 4. UI: `src/routes/_authenticated/app.plan.$patientId.tsx`
 
-## Solución (a ejecutar en modo build)
+- Al recibir data del roadmap:
+  - Si `plan_generation_status ∈ {pending, failed}` **o** (`='generating'` y `plan_generation_status_updated_at` ≥ 3 min) → invocar `startPlanGeneration` una vez (guardado con `useRef` para no repetir en re-renders). En `failed` se pasa `force: true`; en `pending` no hace falta.
+  - Si `='generating'` fresco → sólo polling.
+- `refetchInterval` cada ~5 s mientras `plan_generation_status ∈ {pending, generating}`; detener cuando `='ready'` o `='failed'`.
+- Al pasar a `ready`: botones **Abrir Plan** y **Descargar PDF** se habilitan automáticamente por el mismo re-render (sin recarga).
+- Al pasar a `failed`: mostrar mensaje  
+  *"No pudimos terminar de preparar tu plan. Tu pago está seguro y puedes intentar nuevamente."*  
+  + botón **Reintentar generación** que llama `startPlanGeneration({ force: true })`. El botón queda deshabilitado mientras el request está en vuelo, y el propio lock atómico impide duplicados si el usuario hace doble click.
 
-1. **Forzar re-despliegue del fix de `wompi_reference`.**
-   - Reconfirmar en `src/lib/payments.functions.ts` que el `insert` incluye `id`, `wompi_reference` (referencia derivada del UUID) en una sola operación (ya está en el fuente; el problema es que producción no lo tiene).
-   - Añadir un `console.info("[createPendingPayment] inserted", { paymentId, reference })` para dejar evidencia en logs y poder confirmar en la próxima prueba que el bundle publicado es el correcto.
+### 5. Post-pago: redirección al Plan
 
-2. **Mover el disparo de la Skill fuera del handler HTTP del webhook.**
-   - En `src/routes/api/public/wompi-webhook.ts`, reemplazar el `void (async () => …)()` por un endpoint interno dedicado, p. ej. una server route `POST /api/public/plan-generate` que valide un `secret` interno (HMAC con `WOMPI_EVENTS_KEY` o un `INTERNAL_TRIGGER_SECRET` nuevo) y llame a `generateInteractivePlan`.
-   - Desde el webhook, hacer `fetch(<internal-url>, { method: "POST", body: {...}, headers: { ... } })` **sin await**, o mejor con `ctx.waitUntil(...)` si está disponible en el contexto del handler. Esto asegura que la ejecución de la Skill viva en su propia invocación de Worker (con su propio presupuesto de CPU) y no dependa del ciclo de vida del webhook.
-   - Como fallback de resiliencia, si el cliente sigue haciendo polling y detecta `payments.status='paid'` pero `plan_generation_status ∈ {pending, failed}`, permitir que `getPaymentStatus` (o un server fn nuevo) reintente disparar el mismo endpoint interno una sola vez. Esto cubre el caso de que el `fetch` interno se pierda.
+Verificar `src/routes/checkout.return.tsx`: cuando el polling recibe `status='paid'` y `planStatus='unlocked'`, redirigir a `/app/plan/{patientId}`. Ahí la UI dispara la generación como se describe arriba. (Este comportamiento ya existe; sólo se verifica y ajusta el `to` si fuera necesario — sin cambios de diseño.)
 
-3. **Backfill del pago actual atascado** (`2dad8ef5-…`):
-   - Asignarle `wompi_reference = 'NP-2DAD8EF5'` con una migración/insert puntual para que el webhook, si Wompi lo reintenta, pueda cerrarlo. Alternativamente marcarlo `rejected` para dejarlo fuera del camino feliz.
+### 6. Limpieza de disparos muertos
 
-4. **Prueba end-to-end en Sandbox** tras aplicar 1–3:
-   - Iniciar compra desde la Hoja de Ruta.
-   - Aprobar en Wompi Sandbox.
-   - Confirmar en logs: `createPendingPayment inserted` → webhook 200 con match → `payments.status = paid` → `roadmap.plan_status = unlocked` → invocación al endpoint interno → `plan_generation_status = generating` → `ready`.
-   - Verificar que `/app/plan-interactivo` renderiza el plan y no queda en el spinner.
+- Eliminar el `void fetch('/api/public/plan-generate', …)` de `src/routes/api/public/wompi-webhook.ts` (queda sólo el marcado de `paid`/`unlocked`/`pending`).
+- Eliminar el fallback `void fetch(...)` de `getPaymentStatus` en `src/lib/payments.functions.ts`.
+- `src/routes/api/public/plan-generate.ts` se conserva por si un admin quiere disparar manualmente (firma HMAC ya presente), pero deja de ser parte del flujo automático.
 
-## Detalles técnicos
+### 7. Backfill del caso atascado
 
-- No tocar `src/integrations/supabase/*` (auto-generados).
-- El endpoint interno debe estar bajo `src/routes/api/public/*` (bypass de auth) y validar el secreto en la primera línea del handler, antes de cualquier import de `client.server`.
-- El polling en `checkout.return.tsx` no necesita cambios de UI adicionales tras el fix; el mensaje "verificación pendiente" seguirá funcionando como red de seguridad.
-- No se requieren cambios de esquema para Bug 1; para Bug 2 solo se añade una server route y (opcional) un secreto (`INTERNAL_TRIGGER_SECRET`) vía `add_secret`.
+Sobre el roadmap actualmente `plan_generation_status='pending'` (roadmap `166eb525…`, pago `897e1595…` ya `paid` y `unlocked`): dejar tal cual — al abrir la pantalla, la nueva lógica lo detecta y arranca la generación automáticamente. Si se detecta que quedó en `generating` sin `updated_at`, el backfill de la migración lo pondrá con `updated_at=now()`; tras 3 min será elegible para retomarlo.
 
-## Riesgos
+## Verificación (obligatoria al final)
 
-- Si el problema real del Bug 1 no es "despliegue no aplicado" sino que producción está sirviendo una versión anterior del server function por caché de build, el `console.info` propuesto lo revelará de inmediato en el próximo intento — sin él, seguiríamos a ciegas.
-- El endpoint interno debe estar firmado; publicarlo sin firma sería un vector para forzar generaciones de plan arbitrarias.
+1. Migración aplicada; columnas y trigger presentes; backfill OK.
+2. Abrir `/app/plan/{patientId}` del caso atascado → observar transiciones `pending → generating → ready` sin recargar. Confirmar que **Abrir Plan** y **Descargar PDF** se habilitan solos.
+3. Recoger logs de worker: `[plan-skill] locked → generating`, `[plan-skill] ready` (o `failed` con `plan_generation_error`).
+4. Reportar al usuario: estado final del roadmap en BD, timestamps y extracto de logs.
+5. Si el caso terminara en `failed`: presentar el error persistido, el mensaje visible en UI y confirmar que **Reintentar** cambia estado a `generating` nuevamente vía lock atómico (sin duplicaciones).
+
+## Fuera de alcance
+
+- No se modifica la Evaluación, la Hoja de Ruta, ni la integración Wompi (más allá de quitar el `fetch` huérfano ya muerto).
+- No se cambia el diseño de ninguna pantalla — sólo los estados/mensajes ya definidos en la especificación previa.
+- No se renombra `ready` a `completed` en el modelo de datos para no romper contratos existentes.
