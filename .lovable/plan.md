@@ -1,101 +1,123 @@
-## Plan Interactivo NEUROPLAN — Infraestructura
 
-Preparo toda la estructura para el Plan Interactivo. La Skill de IA que rellenará el contenido se conecta después sin tocar frontend ni backend nuevos.
+## Skill "Generador del Plan Interactivo NEUROPLAN"
 
-Nota importante: el proyecto no tiene una tabla `initial_reports`; la tabla equivalente que ya guarda la Hoja de Ruta y el estado `unlocked` cuando Wompi aprueba el pago es **`neurodevelopment_roadmaps`**. Se extiende esa tabla, como confirmaste.
+Esta fase deja lista **la lógica de generación** del Plan Interactivo. No genera PDF, no toca Moholka, no publica nada al usuario final: solo construye el contenido y lo escribe en `neurodevelopment_roadmaps.plan_content`, marcando `plan_generation_status`.
 
-### 1. Backend — extender `neurodevelopment_roadmaps`
+Se respeta lo que ya existe: tablas, RLS, webhook Wompi, rutas del Plan y `getInteractivePlan`. No se recalcula nada — todos los puntajes, prioridades, hemisferio y orden de reflejos ya vienen del backend (`neurodevelopment_roadmaps` + `report-engine`).
 
-Migración añadiendo columnas (todas nullables, para no romper filas existentes):
+### 1. Ubicación de la Skill
 
-- `plan_content jsonb` — lo llenará la Skill (contexto, hallazgos, objetivos, fichas, rutina 12 semanas, recomendaciones familia).
-- `plan_generation_status text` con default `'pending'` — valores: `pending | generating | ready | failed`.
-- `plan_generated_at timestamptz`.
-- `plan_activated_at timestamptz` — se setea cuando el webhook marca `plan_status = 'unlocked'`.
-- `plan_pdf_url text` — URL del PDF personalizado (lo generará la Skill).
-- `manual_pdf_url text` — URL del Manual Oficial (único, compartido).
+Módulo server-only nuevo: `src/lib/plan/skill/`.
 
-El webhook Wompi ya deja `plan_status = 'unlocked'`; se le añade también `plan_activated_at = now()` cuando marca el pago como `paid`. No se toca ni el flujo de evaluación, ni el de pago, ni la Hoja de Ruta.
+- `src/lib/plan/skill/prompts.ts` — system prompt clínico + plantillas por sección.
+- `src/lib/plan/skill/cerebro-query.ts` — consulta filtrada e incremental a `knowledge_documents` (CEREBRO).
+- `src/lib/plan/skill/context-builder.ts` — arma el `PlanInput` a partir de paciente + roadmap + assessment (sin recalcular).
+- `src/lib/plan/skill/generator.ts` — orquesta: input → consultas CEREBRO → llamada al modelo → `PlanContent` validado.
+- `src/lib/plan/skill/schema.ts` — tipos y schema Zod del `PlanContent` (9 secciones).
+- `src/lib/plan/skill/generate.functions.ts` — server functions expuestas.
 
-Manual Oficial: se guarda como constante `MANUAL_PDF_URL` en `src/lib/plan/constants.ts`, apuntando a un objeto del bucket privado `cerebro-assets`. Como el bucket es privado, la descarga se hace vía una server function que genera una signed URL. Cuando subas el archivo, sólo hay que actualizar la constante con el path del objeto.
+Nada de esto se importa desde el cliente. Todo corre server-side vía `createServerFn` con `requireSupabaseAuth` (para el trigger manual del admin) y una función interna llamable desde el webhook.
 
-### 2. Server functions nuevas — `src/lib/plan/plan.functions.ts`
+### 2. Contrato del `PlanContent`
 
-Todas con `requireSupabaseAuth` y validación de que:
-1. Existe `assessment` completada del `patient_id`.
-2. Existe `neurodevelopment_roadmaps` para esa evaluación.
-3. `plan_status = 'unlocked'` (pago aprobado).
+`plan_content` (jsonb ya existente en `neurodevelopment_roadmaps`) tendrá exactamente estas 9 secciones, cada una con el texto redactado por la Skill y las referencias a CEREBRO utilizadas:
 
-Funciones:
+1. `context` — Contexto del caso.
+2. `findings` — Hallazgos de la valoración.
+3. `objectives` — Objetivos del programa.
+4. `instruction_cards` — Fichas de indicaciones (una por prioridad / reflejo).
+5. `routine_12_weeks` — Rutina semanal de 12 semanas.
+6. `follow_up` — Seguimiento.
+7. `family_recommendations` — Recomendaciones para la familia.
+8. `closing` — Cierre.
+9. `legal_notice` — Aviso legal.
 
-- `getInteractivePlan({ patientId })` → devuelve `{ patient, roadmap, plan_content, plan_generation_status, plan_pdf_url, manual_available, activated_at }`. Si no se cumplen las condiciones, devuelve un shape `{ blocked: true, reason }` en vez de tirar 401.
-- `getManualDownloadUrl()` → genera signed URL (10 min) para `MANUAL_PDF_URL` desde el bucket privado. Devuelve `{ url }` o `{ available: false }` si aún no hay archivo.
-- `getPlanPdfDownloadUrl({ patientId })` → signed URL del PDF personalizado cuando `plan_pdf_url` exista; si no, `{ available: false, reason: 'preparing' }`.
+Cada sección incluye: `title`, `body` (markdown), `sources: string[]` (ids de `knowledge_documents` utilizados). Este shape ya es compatible con la vista `app.plan.$patientId.ver.tsx`.
 
-Ninguna función genera PDFs ni contenido — sólo lee y firma URLs.
+### 3. Precondiciones (guardas duras)
 
-### 3. Frontend — nuevas rutas
+La Skill solo se ejecuta si TODAS son verdad — se validan en `generator.ts` antes de la primera llamada al modelo:
 
-Todas bajo `_authenticated/`, con guardia interna (llaman a `getInteractivePlan`; si `blocked` redirigen o muestran mensaje).
+- Existe `patient` del `user_id` correcto.
+- Existe `assessment` con `status = 'completed'` de ese paciente.
+- Existe `neurodevelopment_roadmaps` para esa evaluación.
+- `roadmap.plan_status = 'unlocked'` (pago Wompi aprobado).
+- `roadmap.plan_generation_status ∈ {'pending','failed'}` (evita regenerar sobre uno ya `ready` salvo forzado por admin).
 
-- `src/routes/_authenticated/app.plan.$patientId.tsx` — vista principal del Plan Interactivo (dashboard con las 4 tarjetas).
-- `src/routes/_authenticated/app.plan.$patientId.ver.tsx` — "Ver Plan Interactivo" (render del `plan_content` cuando exista; estado "preparando" mientras no).
+Si algo falla, `plan_generation_status` no cambia y la función devuelve `{ ok: false, reason }`. Nunca escribe contenido parcial.
 
-Layout de estas rutas: comparten un shell con el botón flotante de Moholka en la esquina inferior derecha.
+### 4. Máquina de estados de `plan_generation_status`
 
-#### Encabezado
-Nombre del niño, fecha de activación (`plan_activated_at`), badge de estado. Estado visible:
-- `plan_generation_status === 'ready'` → **Plan Activo**.
-- Otros → **Preparando tu Plan**, con el mensaje "Estamos preparando tu Plan Interactivo NEUROPLAN…".
+`pending` → `generating` (lock optimista) → `ready` (con `plan_content` + `plan_generated_at`) o `failed` (registrando el motivo). El cambio a `generating` se hace con un `UPDATE ... WHERE plan_generation_status IN ('pending','failed')` para evitar dobles disparos concurrentes.
 
-#### Cuatro tarjetas
-1. **Ver Plan Interactivo** → botón "Abrir Plan" → navega a `app.plan.$patientId.ver`. Si `plan_content` no está listo, la vista destino muestra la pantalla de preparación.
-2. **Descargar Plan en PDF** → botón "Descargar PDF". Llama `getPlanPdfDownloadUrl`. Si no está listo, botón deshabilitado con leyenda "Disponible al finalizar la generación".
-3. **Manual Oficial de Ejercicios NEUROPLAN** → texto institucional + botón "Descargar Manual" que llama `getManualDownloadUrl` y abre la signed URL en nueva pestaña. Si aún no hay archivo, botón deshabilitado con "Próximamente".
-4. **Moholka** → texto de acompañamiento 4 semanas + botón "Hablar con Moholka" que abre el mismo panel lateral del botón flotante.
+### 5. Consulta filtrada a CEREBRO
 
-#### Botón flotante Moholka
-Componente `src/components/plan/MoholkaFloatingButton.tsx`. Fixed bottom-right, texto "💬 Recuerda que estoy aquí para ayudarte". Abre `Sheet` lateral (shadcn) con el mensaje: *"Moholka estará disponible cuando el Plan Interactivo haya sido generado."* Sin integración de IA. Se monta sólo en las rutas del Plan Interactivo.
+`cerebro-query.ts` implementa búsqueda incremental, nunca "cargar todo":
 
-### 4. Entrada desde el Dashboard
+1. Intento exacto: `module` + `subcategory` + `severity_level` + `behavioral_condition`.
+2. Amplía: quita `behavioral_condition`.
+3. Amplía: quita `severity_level`.
+4. Amplía: solo `module` + `subcategory`.
+5. Último recurso: solo `module`.
 
-En `app.index.tsx` (dispatcher por estado): cuando el paciente tiene `plan_status = 'unlocked'`, la tarjeta principal ahora enlaza a `/app/plan/$patientId` (hoy va a la Hoja de Ruta). Se conserva el acceso a la Hoja de Ruta como enlace secundario.
+Filtros comunes: `is_active = true`, `ORDER BY version DESC`, `LIMIT` acotado (p. ej. 6 por consulta). Devuelve `{ hits: KnowledgeDoc[], matchedLevel }` para que el generador sepa qué tan específico fue el match; si no encuentra nada, se registra en la sección correspondiente como "sin material en CEREBRO para esta condición" y no se inventa.
 
-En `checkout.return.tsx`, cuando el pago queda confirmado, el CTA "Ir a mi Plan" apunta a `/app/plan/$patientId` en lugar de al informe.
+Las consultas se lanzan por prioridad de la Hoja de Ruta y por reflejo, en el mismo orden que ya calculó el backend — la Skill no reordena.
 
-### 5. Seguridad
+### 6. Orquestación del generador
 
-- RLS de `neurodevelopment_roadmaps` ya limita a `auth.uid()`. Las nuevas columnas heredan la misma política.
-- Las server functions vuelven a validar en handler: evaluación completada + roadmap + `plan_status='unlocked'`. Sin las 3, respuesta `blocked`.
-- Signed URLs cortas (10 min) para el Manual y el PDF personalizado. El bucket sigue privado.
-- Ni el `plan_content` ni las URLs se exponen a rutas públicas.
+`generator.ts`:
 
-### 6. Integración futura con la Skill
+1. Cargar `PlanInput` (paciente, roadmap con puntajes y prioridades, respuestas relevantes de la evaluación, equipamiento del onboarding, duración = 12 semanas).
+2. Marcar `plan_generation_status = 'generating'` con lock optimista.
+3. Para cada prioridad y cada reflejo (en el orden recibido), consultar CEREBRO y armar el "briefing" mínimo (fragmentos citados, no la base completa).
+4. Llamar al modelo por Lovable AI Gateway (default `openai/gpt-5.5`, sin priority) con `generateText` + `Output.object(PlanContentSchema)` — schema plano, sin `min/max`, con límites solo en el prompt (siguiendo `ai-sdk-lovable-gateway`; `structuredOutputs: true` para OpenAI). Bloque `try/catch` con `NoObjectGeneratedError.isInstance` y fallback a parseo tolerante para no romper el flujo.
+5. Validar shape final con Zod (9 secciones presentes, sin secciones vacías salvo que se marque "sin material en CEREBRO").
+6. Guardar: `UPDATE neurodevelopment_roadmaps SET plan_content=$json, plan_generation_status='ready', plan_generated_at=now() WHERE id=$id`.
+7. Errores → `plan_generation_status='failed'` con `plan_content` intacto.
 
-Contrato ya listo: la Skill sólo tiene que hacer un `UPDATE` en `neurodevelopment_roadmaps` fijando `plan_content` (jsonb con secciones: `context`, `findings`, `objectives`, `instruction_cards`, `routine_12_weeks`, `family_recommendations`), `plan_pdf_url`, `plan_generation_status='ready'`, `plan_generated_at=now()`. El frontend detecta automáticamente el cambio en el próximo fetch — sin cambios de código.
+Reglas dentro del prompt del sistema:
+- No emitir diagnósticos.
+- No inventar ejercicios, materiales, frecuencias, imágenes ni protocolos.
+- Solo usar el material CEREBRO entregado en el prompt.
+- Respetar orden de prioridades y reflejos recibido.
+- Usar solo el equipamiento marcado por la familia.
+- Lenguaje claro, cercano, profesional, para familias.
 
-### 7. Validaciones finales
+### 7. Puntos de disparo (solo lógica, sin UI nueva de usuario)
 
-- Flujo pago aprobado → `plan_status='unlocked'` + `plan_activated_at` → acceso al Plan.
-- Dashboard del padre lleva a la nueva vista.
-- Las 4 tarjetas visibles y conectadas (Abrir Plan navega; Descargar PDF preparado; Manual con signed URL; Moholka abre panel).
-- Botón flotante presente en `app.plan.*`.
-- Sin pago, sin roadmap o sin evaluación → mensaje bloqueante y redirección.
+- **Automático post-pago**: en `src/routes/api/public/wompi-webhook.ts`, cuando el webhook marca `plan_status='unlocked'`, encolar la generación llamando `generateInteractivePlan` en modo `fire-and-forget` (`waitUntil` si está disponible, o `Promise.resolve().then(...)`). Si falla, queda en `failed` y se puede reintentar.
+- **Reintento manual admin**: server function `regenerateInteractivePlan({ patientId })` protegida por `requireSupabaseAuth` + verificación de rol admin (`has_role`) para reintento operativo. Sin UI dedicada en esta fase; se llama desde herramientas internas.
+
+La vista `app.plan.$patientId.tsx` ya sabe leer `plan_generation_status` (`pending` / `generating` → "Estamos preparando tu Plan"; `ready` → habilita "Ver Plan Interactivo"). No hace falta cambiarla.
+
+### 8. Fuera de alcance en este módulo
+
+- Generación del PDF (`plan_pdf_url` sigue vacío; el botón "Descargar PDF" ya está en estado "preparando").
+- Integración conversacional de Moholka.
+- Envíos por email o notificaciones.
+- UI de administración para reintentos (solo la server function queda lista).
+
+### Detalles técnicos
+
+- **Modelo por defecto**: `openai/gpt-5.5` vía `createLovableAiGatewayProvider` con `structuredOutputs: true`. Sin priority tier.
+- **Schema** en Zod: strict-compatible (todo required, `.nullable()` en opcionales, sin bounds numéricos ni enums grandes). Los límites de longitud van en el prompt, y se hace clamp en código si excede.
+- **Tokens**: se envía a CEREBRO solo lo estrictamente necesario (título + `intervention_text`, no la fila completa) y solo los hits filtrados.
+- **Logs**: se conserva el `X-Lovable-AIG-Run-ID` en los headers de respuesta interna para trazabilidad.
+- **RLS**: el generador corre con `supabaseAdmin` cargado dentro del handler (patrón `server-side-modern`) porque debe escribir `plan_content` sin sesión del usuario en el disparo desde webhook. Antes de escribir, revalida `plan_status='unlocked'`.
+- **Secrets**: usa `LOVABLE_API_KEY` ya presente. No requiere secretos nuevos.
 
 ### Archivos
 
 **Nuevos**
-- `src/lib/plan/constants.ts`
-- `src/lib/plan/plan.functions.ts`
-- `src/components/plan/MoholkaFloatingButton.tsx`
-- `src/components/plan/MoholkaPanel.tsx`
-- `src/routes/_authenticated/app.plan.$patientId.tsx`
-- `src/routes/_authenticated/app.plan.$patientId.ver.tsx`
+- `src/lib/plan/skill/schema.ts`
+- `src/lib/plan/skill/prompts.ts`
+- `src/lib/plan/skill/cerebro-query.ts`
+- `src/lib/plan/skill/context-builder.ts`
+- `src/lib/plan/skill/generator.ts`
+- `src/lib/plan/skill/generate.functions.ts`
 
 **Modificados**
-- `src/routes/api/public/wompi-webhook.ts` — setear `plan_activated_at` junto con `plan_status='unlocked'`.
-- `src/routes/_authenticated/app.index.tsx` — enlazar a `/app/plan/$patientId` cuando esté desbloqueado.
-- `src/routes/checkout.return.tsx` — CTA post-pago hacia el Plan.
+- `src/routes/api/public/wompi-webhook.ts` — al marcar `unlocked`, disparar `generateInteractivePlan` en background y dejar `plan_generation_status='generating'`.
 
-**Migración**
-- Añadir columnas `plan_content`, `plan_generation_status`, `plan_generated_at`, `plan_activated_at`, `plan_pdf_url`, `manual_pdf_url` a `neurodevelopment_roadmaps`.
+**Sin migraciones**: todas las columnas necesarias (`plan_content`, `plan_generation_status`, `plan_generated_at`, `plan_pdf_url`) ya existen.
