@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useRouterState } from "@tanstack/react-router";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -16,6 +17,12 @@ export const Route = createFileRoute("/_authenticated/app")({
 });
 
 function AppLayout() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Admin subtree uses its own layout (AdminSidebar); skip the family shell.
+  if (pathname === "/app/admin" || pathname.startsWith("/app/admin/")) {
+    return <Outlet />;
+  }
+
   const fetchDashboard = useServerFn(getFamilyDashboard);
   const dashboard = useQuery({
     queryKey: ["family-dashboard"],
