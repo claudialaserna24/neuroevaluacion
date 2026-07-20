@@ -144,7 +144,7 @@ async function tryLock(
 ): Promise<boolean> {
   const { data, error } = await supabaseAdmin
     .from("neurodevelopment_roadmaps")
-    .update({ plan_generation_status: "generating" })
+    .update({ plan_generation_status: "generating", plan_generation_error: null })
     .eq("id", roadmapId)
     .in("plan_generation_status", ["pending", "failed"])
     .select("id");
@@ -154,7 +154,7 @@ async function tryLock(
 
 export async function generateInteractivePlan(
   patientId: string,
-  opts: { force?: boolean } = {},
+  opts: { force?: boolean; skipLock?: boolean } = {},
 ): Promise<GenerateResult> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) return { ok: false, reason: "missing_lovable_api_key" };
@@ -165,7 +165,7 @@ export async function generateInteractivePlan(
   if (!built.ok) return { ok: false, reason: built.reason };
   const { input, roadmapId } = built;
 
-  if (opts.force) {
+  if (opts.force && !opts.skipLock) {
     await supabaseAdmin
       .from("neurodevelopment_roadmaps")
       .update({ plan_generation_status: "pending" })
@@ -173,8 +173,11 @@ export async function generateInteractivePlan(
       .eq("plan_status", "unlocked");
   }
 
-  const locked = await tryLock(supabaseAdmin, roadmapId);
-  if (!locked) return { ok: false, reason: "already_in_progress_or_ready" };
+  if (!opts.skipLock) {
+    const locked = await tryLock(supabaseAdmin, roadmapId);
+    if (!locked) return { ok: false, reason: "already_in_progress_or_ready" };
+  }
+  console.info("[plan-skill] generating", { patientId, roadmapId });
 
   try {
     const cerebroBriefing = await collectCerebroBriefing(supabaseAdmin, input);
@@ -215,7 +218,10 @@ export async function generateInteractivePlan(
     if (!fresh || fresh.plan_status !== "unlocked") {
       await supabaseAdmin
         .from("neurodevelopment_roadmaps")
-        .update({ plan_generation_status: "failed" })
+        .update({
+          plan_generation_status: "failed",
+          plan_generation_error: "roadmap_no_longer_unlocked",
+        })
         .eq("id", roadmapId);
       return { ok: false, reason: "no_longer_unlocked" };
     }
@@ -230,16 +236,23 @@ export async function generateInteractivePlan(
       .update({
         plan_content: planContent as unknown as Json,
         plan_generation_status: "ready",
+        plan_generation_error: null,
         plan_generated_at: new Date().toISOString(),
       })
       .eq("id", roadmapId);
 
+    console.info("[plan-skill] ready", { patientId, roadmapId });
     return { ok: true, roadmapId };
   } catch (err) {
     console.error("[plan-skill] generation failed", err);
+    const message =
+      err instanceof Error ? err.message : String(err);
     await supabaseAdmin
       .from("neurodevelopment_roadmaps")
-      .update({ plan_generation_status: "failed" })
+      .update({
+        plan_generation_status: "failed",
+        plan_generation_error: message.slice(0, 2000),
+      })
       .eq("id", roadmapId);
     return { ok: false, reason: "generation_failed" };
   }
