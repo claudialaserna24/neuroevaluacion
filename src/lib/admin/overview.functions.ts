@@ -280,7 +280,7 @@ export const listAdminAssessments = createServerFn({ method: "GET" })
     if (!rows?.length) return [];
 
     const pids = Array.from(new Set(rows.map((r) => r.patient_id)));
-    const [{ data: patients }, { data: totalQ }, { data: answers }] =
+    const [{ data: patients }, totalQ, { data: answers }] =
       await Promise.all([
         s
           .from("patients")
@@ -288,7 +288,7 @@ export const listAdminAssessments = createServerFn({ method: "GET" })
           .in("id", pids),
         s
           .from("assessment_questions")
-          .select("id", { count: "exact" }),
+          .select("*", { count: "exact", head: true }),
         s
           .from("assessment_answers")
           .select("assessment_id")
@@ -298,7 +298,7 @@ export const listAdminAssessments = createServerFn({ method: "GET" })
           ),
       ]);
 
-    const totalQuestions = (totalQ as unknown as { length?: number })?.length ?? 0;
+    const totalQuestions = totalQ.count ?? 0;
     const answeredByAssessment = new Map<string, number>();
     for (const a of answers ?? []) {
       answeredByAssessment.set(
