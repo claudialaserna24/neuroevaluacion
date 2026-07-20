@@ -23,6 +23,7 @@ export type QueryHit = {
 };
 
 const LIMIT_PER_QUERY = 6;
+const LIMIT_PROGRESSION = 12;
 
 // Búsqueda incremental: nunca carga toda la base.
 export async function queryCerebro(
@@ -80,4 +81,25 @@ export function formatCerebroForPrompt(label: string, hit: QueryHit): string {
       `- [id: ${d.id}] (${d.subcategory ?? "-"} · ${d.severity_level ?? "-"} · ${d.behavioral_condition ?? "-"}) ${d.intervention_text}`,
   );
   return `# ${label} (match: ${hit.matchedLevel})\n${lines.join("\n")}`;
+}
+
+// Consulta protocolos de progresión (semanales) para un reflejo o área.
+// Filtra por módulo y subcategoría para evitar cargar todo.
+export async function queryProgression(
+  supabase: SupabaseClient,
+  module: string,
+  subcategory: string | null,
+): Promise<KnowledgeDoc[]> {
+  let q = supabase
+    .from("knowledge_documents")
+    .select(
+      "id, module, subcategory, severity_level, behavioral_condition, intervention_text, version",
+    )
+    .eq("active", true)
+    .eq("module", module)
+    .order("version", { ascending: false })
+    .limit(LIMIT_PROGRESSION);
+  if (subcategory) q = q.eq("subcategory", subcategory);
+  const { data } = await q;
+  return data ?? [];
 }
