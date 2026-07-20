@@ -50,6 +50,10 @@ export const createPendingPayment = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw error;
+    console.info("[createPendingPayment] inserted", {
+      paymentId: inserted.id,
+      reference,
+    });
 
     // Construye la URL del Web Checkout de Wompi con firma de integridad.
     const { generateIntegritySignature, getWompiConfig } = await import(
