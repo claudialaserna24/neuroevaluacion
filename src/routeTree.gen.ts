@@ -20,6 +20,7 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as ApiPublicWompiWebhookRouteImport } from './routes/api/public/wompi-webhook'
 import { Route as AuthenticatedAppPlanInteractivoRouteImport } from './routes/_authenticated/app.plan-interactivo'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
 import { Route as AuthenticatedAppPacientesRouteImport } from './routes/_authenticated/app.pacientes'
@@ -86,6 +87,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const ApiPublicWompiWebhookRoute = ApiPublicWompiWebhookRouteImport.update({
+  id: '/api/public/wompi-webhook',
+  path: '/api/public/wompi-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppPlanInteractivoRoute =
   AuthenticatedAppPlanInteractivoRouteImport.update({
     id: '/plan-interactivo',
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
+  '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
+  '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/_authenticated/app/pacientes': typeof AuthenticatedAppPacientesRouteWithChildren
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/plan-interactivo': typeof AuthenticatedAppPlanInteractivoRoute
+  '/api/public/wompi-webhook': typeof ApiPublicWompiWebhookRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/pacientes/$patientId': typeof AuthenticatedAppPacientesPatientIdRoute
 }
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
     | '/app/pacientes'
     | '/app/perfil'
     | '/app/plan-interactivo'
+    | '/api/public/wompi-webhook'
     | '/app/'
     | '/app/pacientes/$patientId'
   fileRoutesByTo: FileRoutesByTo
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/app/pacientes'
     | '/app/perfil'
     | '/app/plan-interactivo'
+    | '/api/public/wompi-webhook'
     | '/app'
     | '/app/pacientes/$patientId'
   id:
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/pacientes'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/plan-interactivo'
+    | '/api/public/wompi-webhook'
     | '/_authenticated/app/'
     | '/_authenticated/app/pacientes/$patientId'
   fileRoutesById: FileRoutesById
@@ -265,6 +277,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicWompiWebhookRoute: typeof ApiPublicWompiWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/api/public/wompi-webhook': {
+      id: '/api/public/wompi-webhook'
+      path: '/api/public/wompi-webhook'
+      fullPath: '/api/public/wompi-webhook'
+      preLoaderRoute: typeof ApiPublicWompiWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/plan-interactivo': {
       id: '/_authenticated/app/plan-interactivo'
@@ -468,6 +488,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicWompiWebhookRoute: ApiPublicWompiWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
