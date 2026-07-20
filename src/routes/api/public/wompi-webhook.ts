@@ -120,6 +120,7 @@ export const Route = createFileRoute("/api/public/wompi-webhook")({
               .update({
                 plan_status: "unlocked",
                 unlocked_at: new Date().toISOString(),
+                plan_activated_at: new Date().toISOString(),
               })
               .eq("patient_id", payment.patient_id)
               .eq("assessment_id", payment.assessment_id);
