@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
@@ -12,12 +14,7 @@ import {
 } from "@/lib/patients.functions";
 
 export const Route = createFileRoute("/_authenticated/app/pacientes")({
-  head: () => ({
-    meta: [
-      { title: "Mis pacientes — NEUROPLAN" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
+  head: () => pageMeta("Datos iniciales"),
   validateSearch: (s: Record<string, unknown>) =>
     z.object({ first: z.literal("1").optional() }).parse(s),
   component: PacientesPage,
@@ -59,13 +56,13 @@ function PacientesPage() {
               Cada niño o niña tiene sus propios formularios.
             </p>
             {!showForm && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setShowForm(true)}
                 className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
               >
                 <Plus className="h-4 w-4" /> Añadir paciente
-              </button>
+              </Button>
             )}
           </>
         )}
@@ -220,21 +217,21 @@ function NewPatientForm({
       </div>
 
       <div className="flex items-center justify-end gap-2">
-        <button
+        <Button
           type="button"
           onClick={onDone}
           className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
           Cancelar
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
           disabled={saving}
           className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
         >
           {saving ? "Continuando…" : "Continuar con la evaluación"}
           {!saving && <ArrowRight className="h-4 w-4" />}
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import {
   SidebarProvider,
@@ -9,12 +10,7 @@ import { Logo } from "@/components/brand/logo";
 import { getMyRole } from "@/lib/admin/overview.functions";
 
 export const Route = createFileRoute("/_authenticated/app/admin")({
-  head: () => ({
-    meta: [
-      { title: "Panel administrador — NEUROPLAN" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
+  head: () => pageMeta("Administración de formularios"),
   beforeLoad: async () => {
     const role = await getMyRole();
     if (!role.isAdmin) throw redirect({ to: "/app" });

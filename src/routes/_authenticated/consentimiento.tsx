@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -13,12 +15,7 @@ import {
 } from "@/lib/legal/habeas-data";
 
 export const Route = createFileRoute("/_authenticated/consentimiento")({
-  head: () => ({
-    meta: [
-      { title: "Consentimiento informado — NEUROPLAN" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
+  head: () => pageMeta("Consentimiento informado"),
   component: ConsentimientoPage,
 });
 
@@ -92,7 +89,7 @@ function ConsentimientoPage() {
                 política, con las finalidades indicadas.
               </span>
             </label>
-            <button
+            <Button
               disabled={!checked || submitting}
               onClick={async () => {
                 setSubmitting(true);
@@ -115,7 +112,7 @@ function ConsentimientoPage() {
               className="mt-4 w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? "Registrando…" : "Aceptar y continuar"}
-            </button>
+            </Button>
             <p className="mt-2 text-center text-[11px] text-muted-foreground">
               Puedes retirar tu autorización en cualquier momento desde Mi
               Perfil.

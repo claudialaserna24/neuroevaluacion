@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,7 +8,7 @@ import { HABEAS_DATA_VERSION } from "@/lib/legal/habeas-data";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/perfil")({
-  head: () => ({ meta: [{ title: "Mi Perfil — NEUROPLAN" }, { name: "robots", content: "noindex" }] }),
+  head: () => pageMeta("Mi cuenta"),
   component: PerfilPage,
 });
 
