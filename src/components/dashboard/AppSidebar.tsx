@@ -1,157 +1,20 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import {
-  Home,
-  User,
-  ClipboardList,
-  Compass,
-  FileText,
-  Bot,
-  BookOpen,
-  TrendingUp,
-  UserRound,
-  LogOut,
-  Shield,
-} from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { LogOut, ClipboardList, Shield, User } from "lucide-react";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { Logo } from "@/components/brand/logo";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { getMyRole } from "@/lib/admin/overview.functions";
-
-type Item = {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  to?: string;
-  action?: "moholka";
-  exact?: boolean;
-};
-
-const items: Item[] = [
-  { label: "Inicio", icon: Home, to: "/app", exact: true },
-  { label: "Ficha Integral", icon: User, to: "/app/ficha" },
-  { label: "Evaluaciones", icon: ClipboardList, to: "/app/evaluaciones" },
-  { label: "Hoja de Ruta", icon: Compass, to: "/app/hoja-de-ruta" },
-  { label: "Plan Interactivo", icon: FileText, to: "/app/mi-plan" },
-  { label: "Moholka", icon: Bot, action: "moholka" },
-  { label: "Manual Oficial", icon: BookOpen, to: "/app/manual" },
-  { label: "Seguimiento", icon: TrendingUp, to: "/app/seguimiento" },
-  { label: "Mi Perfil", icon: UserRound, to: "/app/perfil" },
-];
-
 export function AppSidebar() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { setOpenMobile, isMobile } = useSidebar();
-  const fetchRole = useServerFn(getMyRole);
-  const role = useQuery({
-    queryKey: ["my-role"],
-    queryFn: () => fetchRole(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const isActive = (to: string, exact?: boolean) =>
-    exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
-
-  const closeOnMobile = () => {
-    if (isMobile) setOpenMobile(false);
-  };
-
-  return (
-    <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="px-4 py-4">
-        <Link to="/app" onClick={closeOnMobile}>
-          <Logo />
-        </Link>
-      </SidebarHeader>
-
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((it) => {
-                const Icon = it.icon;
-                const active = it.to ? isActive(it.to, it.exact) : false;
-                if (it.action === "moholka") {
-                  return (
-                    <SidebarMenuItem key={it.label}>
-                      <SidebarMenuButton
-                        onClick={() => {
-                          window.dispatchEvent(new CustomEvent("moholka:open"));
-                          closeOnMobile();
-                        }}
-                        className="gap-3"
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{it.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                }
-                return (
-                  <SidebarMenuItem key={it.label}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={active}
-                      className={cn("gap-3")}
-                    >
-                      <Link to={it.to!} onClick={closeOnMobile}>
-                        <Icon className="h-4 w-4" />
-                        <span>{it.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        {role.data?.isAdmin ? (
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild className="gap-3">
-                    <Link to="/app/admin" onClick={closeOnMobile}>
-                      <Shield className="h-4 w-4" />
-                      <span>Panel administrador</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ) : null}
-      </SidebarContent>
-
-      <SidebarFooter className="p-3">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/auth", replace: true });
-              }}
-              className="gap-3 text-muted-foreground"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Cerrar sesión</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
-  );
+  const { setOpenMobile } = useSidebar();
+  const fn = useServerFn(getMyRole);
+  const role = useQuery({ queryKey: ["my-role"], queryFn: () => fn(), staleTime: 300000 });
+  const close = () => setOpenMobile(false);
+  return <Sidebar collapsible="offcanvas"><SidebarHeader className="p-4"><Logo /></SidebarHeader><SidebarContent><SidebarMenu className="p-3">
+    <SidebarMenuItem><SidebarMenuButton asChild><Link to="/app" onClick={close}><ClipboardList />Formularios</Link></SidebarMenuButton></SidebarMenuItem>
+    <SidebarMenuItem><SidebarMenuButton asChild><Link to="/app/perfil" onClick={close}><User />Mi cuenta</Link></SidebarMenuButton></SidebarMenuItem>
+    {role.data?.isAdmin && <SidebarMenuItem><SidebarMenuButton asChild><Link to="/app/admin" onClick={close}><Shield />Administración</Link></SidebarMenuButton></SidebarMenuItem>}
+  </SidebarMenu></SidebarContent><SidebarFooter><SidebarMenuButton onClick={async () => { await supabase.auth.signOut(); await navigate({ to: "/auth", search: {}, replace: true }); }}><LogOut />Cerrar sesión</SidebarMenuButton></SidebarFooter></Sidebar>;
 }

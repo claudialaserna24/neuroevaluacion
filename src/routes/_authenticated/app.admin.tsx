@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import {
   SidebarProvider,
@@ -6,24 +7,13 @@ import {
 } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Logo } from "@/components/brand/logo";
-import { supabase } from "@/integrations/supabase/client";
+import { getMyRole } from "@/lib/admin/overview.functions";
 
 export const Route = createFileRoute("/_authenticated/app/admin")({
-  head: () => ({
-    meta: [
-      { title: "Panel administrador — NEUROPLAN" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
+  head: () => pageMeta("Administración de formularios"),
   beforeLoad: async () => {
-    const { data: sess } = await supabase.auth.getSession();
-    const uid = sess.session?.user?.id;
-    if (!uid) throw redirect({ to: "/auth" });
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: uid,
-      _role: "administrador",
-    });
-    if (!isAdmin) throw redirect({ to: "/app" });
+    const role = await getMyRole();
+    if (!role.isAdmin) throw redirect({ to: "/app" });
   },
   component: AdminLayout,
 });

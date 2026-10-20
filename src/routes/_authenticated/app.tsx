@@ -1,6 +1,4 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useRouterState } from "@tanstack/react-router";
 import {
   SidebarProvider,
@@ -9,8 +7,6 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import { Logo } from "@/components/brand/logo";
-import { getFamilyDashboard } from "@/lib/dashboard.functions";
-import { MoholkaFloatingButton } from "@/components/plan/MoholkaFloatingButton";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
@@ -28,16 +24,6 @@ function AppLayout() {
 }
 
 function FamilyShell() {
-  const fetchDashboard = useServerFn(getFamilyDashboard);
-  const dashboard = useQuery({
-    queryKey: ["family-dashboard"],
-    queryFn: () => fetchDashboard(),
-    staleTime: 30_000,
-  });
-
-  const patientId = dashboard.data?.patient?.id ?? null;
-  const planReady = dashboard.data?.plan.status === "ready";
-
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-muted/30">
@@ -54,9 +40,6 @@ function FamilyShell() {
           </main>
         </SidebarInset>
       </div>
-      {planReady && patientId ? (
-        <MoholkaFloatingButton ready patientId={patientId} hideTrigger />
-      ) : null}
     </SidebarProvider>
   );
 }

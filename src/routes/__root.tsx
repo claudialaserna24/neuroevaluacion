@@ -6,8 +6,11 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Toaster } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -34,11 +37,11 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportLovableError(error instanceof Error ? error : new Error(String(error)), { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
@@ -81,14 +84,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "NEUROPLAN acompaña a las familias en la evaluación y comprensión del neurodesarrollo de sus hijos, con un plan interactivo personalizado.",
+          "NEUROPLAN acompaña a las familias en la evaluación y comprensión del neurodesarrollo de sus hijos, mediante formularios seguros.",
       },
       { name: "theme-color", content: "#1A858D" },
       { property: "og:title", content: "NEUROPLAN — Orientación experta en neurodesarrollo infantil" },
       {
         property: "og:description",
         content:
-          "NEUROPLAN acompaña a las familias en la evaluación y comprensión del neurodesarrollo de sus hijos, con un plan interactivo personalizado.",
+          "NEUROPLAN acompaña a las familias en la evaluación y comprensión del neurodesarrollo de sus hijos, mediante formularios seguros.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -96,9 +99,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-title", content: "NEUROPLAN" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "twitter:title", content: "NEUROPLAN — Orientación experta en neurodesarrollo infantil" },
-      { name: "twitter:description", content: "NEUROPLAN acompaña a las familias en la evaluación y comprensión del neurodesarrollo de sus hijos, con un plan interactivo personalizado." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/46011ea2-4dd3-4631-a9c6-6cf941f6b5d0/id-preview-7001671b--9a3fbf00-b133-4216-b26e-63970ded57ab.lovable.app-1784548891322.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/46011ea2-4dd3-4631-a9c6-6cf941f6b5d0/id-preview-7001671b--9a3fbf00-b133-4216-b26e-63970ded57ab.lovable.app-1784548891322.png" },
+      { name: "twitter:description", content: "NEUROPLAN acompaña a las familias en la evaluación y comprensión del neurodesarrollo de sus hijos, mediante formularios seguros." },
     ],
     links: [
       {
@@ -123,7 +124,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es">
       <head>
         <HeadContent />
       </head>
@@ -137,11 +138,21 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
+  const router = useRouter();
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (!["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"].includes(event)) return;
+      if (event === "SIGNED_OUT") queryClient.clear();
+      else void queryClient.invalidateQueries();
+      void router.invalidate();
+    });
+    return () => data.subscription.unsubscribe();
+  }, [router, queryClient]);
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <Toaster />
     </QueryClientProvider>
   );
 }

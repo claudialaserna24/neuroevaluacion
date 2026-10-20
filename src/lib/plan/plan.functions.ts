@@ -1,3 +1,4 @@
+import { disabledFeature } from "@/lib/disabled-feature";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
@@ -26,6 +27,7 @@ export const getInteractivePlan = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { patientId: string }) => patientInput.parse(d))
   .handler(async ({ data, context }) => {
+    await disabledFeature();
     const { supabase, userId } = context;
 
     const { data: patient } = await supabase
@@ -109,6 +111,7 @@ export const getManualDownloadUrl = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { patientId: string }) => patientInput.parse(d))
   .handler(async ({ data, context }) => {
+    await disabledFeature();
     await assertUnlocked(context.supabase, context.userId, data.patientId);
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
@@ -124,6 +127,7 @@ export const getPlanPdfDownloadUrl = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { patientId: string }) => patientInput.parse(d))
   .handler(async ({ data, context }) => {
+    await disabledFeature();
     const roadmap = await assertUnlocked(
       context.supabase,
       context.userId,
@@ -164,6 +168,7 @@ async function assertAdmin(
 export const getManualStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await disabledFeature();
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
@@ -205,6 +210,7 @@ export const startPlanGeneration = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
+    await disabledFeature();
     const { supabase, userId } = context;
 
     // 1) Verifica propiedad del paciente (RLS + doble check).

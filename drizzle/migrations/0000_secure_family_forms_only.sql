@@ -1,0 +1,12 @@
+CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN INSERT INTO public.profiles(id,full_name,child_name) VALUES (NEW.id,COALESCE(NEW.raw_user_meta_data->>'full_name',''),NEW.raw_user_meta_data->>'child_name') ON CONFLICT(id) DO NOTHING; INSERT INTO public.user_roles(user_id,role) VALUES (NEW.id,'usuario'::public.app_role) ON CONFLICT DO NOTHING; RETURN NEW; END; $$;
+DROP POLICY IF EXISTS patients_neuro_select ON public.patients;
+DROP POLICY IF EXISTS assessments_neuro_select ON public.assessments;
+DROP POLICY IF EXISTS assessment_answers_neuro_select ON public.assessment_answers;
+DROP POLICY IF EXISTS reports_self_all ON public.neurodevelopment_roadmaps;
+DROP POLICY IF EXISTS roadmaps_neuro_select ON public.neurodevelopment_roadmaps;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.patients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assessments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assessment_answers ENABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles, public.patients, public.assessments, public.assessment_answers TO authenticated;
+GRANT ALL ON public.profiles, public.patients, public.assessments, public.assessment_answers TO service_role;

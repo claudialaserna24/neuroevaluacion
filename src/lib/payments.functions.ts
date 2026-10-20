@@ -1,3 +1,4 @@
+import { disabledFeature } from "@/lib/disabled-feature";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
@@ -14,6 +15,7 @@ export const createPendingPayment = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    await disabledFeature();
     const { supabase, userId } = context;
 
     // Verifica que el paciente pertenezca al usuario (RLS también lo refuerza).
@@ -98,6 +100,7 @@ export const getPaymentStatus = createServerFn({ method: "GET" })
     z.object({ paymentId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    await disabledFeature();
     const { supabase, userId } = context;
     const { data: payment, error } = await supabase
       .from("payments")
@@ -147,6 +150,7 @@ export const getPlanStatus = createServerFn({ method: "GET" })
     z.object({ patientId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    await disabledFeature();
     const { data: roadmap } = await context.supabase
       .from("neurodevelopment_roadmaps")
       .select("plan_status, unlocked_at, assessment_id")

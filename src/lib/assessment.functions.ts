@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { computeReport } from "./report-engine";
+import { allFormsCompleted, formProgress } from "./form-progress";
 
 export const getAssessmentState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -56,6 +56,8 @@ export const saveAnswer = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const owned = await context.supabase.from("assessments").select("id").eq("id", data.assessmentId).eq("user_id", context.userId).maybeSingle();
+    if (owned.error || !owned.data) throw new Error("Formulario no encontrado");
     const { error } = await context.supabase.from("assessment_answers").upsert(
       {
         assessment_id: data.assessmentId,
@@ -65,10 +67,8 @@ export const saveAnswer = createServerFn({ method: "POST" })
       { onConflict: "assessment_id,question_id" },
     );
     if (error) throw error;
-    await context.supabase
-      .from("assessments")
-      .update({ current_question_id: data.questionId })
-      .eq("id", data.assessmentId);
+    const cursor = await context.supabase.from("assessments").update({ current_question_id: data.questionId }).eq("id", data.assessmentId).eq("user_id", context.userId);
+    if (cursor.error) throw cursor.error;
     return { ok: true };
   });
 
@@ -79,41 +79,19 @@ export const completeAssessment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-
-    const { data: assessmentRow, error: aErr } = await supabase
-      .from("assessments")
-      .select("id, patient_id")
-      .eq("id", data.assessmentId)
-      .single();
-    if (aErr || !assessmentRow) throw aErr ?? new Error("Evaluación no encontrada");
-
-    const { data: questions } = await supabase
-      .from("assessment_questions")
-      .select("id, module, dimension, order_index, scale");
-    const { data: answers } = await supabase
-      .from("assessment_answers")
-      .select("question_id, value")
-      .eq("assessment_id", data.assessmentId);
-
-    const report = computeReport(questions ?? [], answers ?? []);
-
-    await supabase.from("neurodevelopment_roadmaps").upsert(
-      {
-        user_id: userId,
-        patient_id: assessmentRow.patient_id,
-        assessment_id: data.assessmentId,
-        cognitive: report.cognitive,
-        functional: report.functional,
-        reflexes: report.reflexes,
-        priorities: report.priorities,
-      },
-      { onConflict: "patient_id,assessment_id" },
-    );
-    await supabase
-      .from("assessments")
-      .update({ status: "completed", completed_at: new Date().toISOString() })
-      .eq("id", data.assessmentId);
-    return { ok: true };
+    const { data: assessment, error } = await supabase.from("assessments").select("id").eq("id", data.assessmentId).eq("user_id", userId).maybeSingle();
+    if (error || !assessment) throw new Error("Formulario no encontrado");
+    const [questions, answers] = await Promise.all([
+      supabase.from("assessment_questions").select("id, module"),
+      supabase.from("assessment_answers").select("question_id").eq("assessment_id", data.assessmentId),
+    ]);
+    if (questions.error || answers.error) throw new Error("No se pudo comprobar el guardado");
+    const completed = allFormsCompleted(formProgress(questions.data ?? [], (answers.data ?? []).map((a) => a.question_id)));
+    if (completed) {
+      const update = await supabase.from("assessments").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", data.assessmentId).eq("user_id", userId);
+      if (update.error) throw update.error;
+    }
+    return { ok: true, completed };
   });
 
 export const getRoadmap = createServerFn({ method: "GET" })
@@ -122,6 +100,7 @@ export const getRoadmap = createServerFn({ method: "GET" })
     z.object({ patientId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data: input, context }) => {
+    throw new Error("Los resultados no están disponibles para las familias");
     const { data, error } = await context.supabase
       .from("neurodevelopment_roadmaps")
       .select("*")
