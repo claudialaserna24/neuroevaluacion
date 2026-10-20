@@ -76,7 +76,7 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
   const [loadError, setLoadError] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Map<string, number>>(new Map());
+  const [answers, setAnswers] = useState<Map<string, number | "na">>(new Map());
   const [cursor, setCursor] = useState(0);
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
@@ -115,8 +115,8 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
       const state = await fetchState({ data: { patientId } });
       setQuestions((qs ?? []) as unknown as Question[]);
       setAssessmentId(state.assessment.id);
-      const map = new Map<string, number>();
-      for (const a of state.answered) if (qs?.some((q) => q.id === a.question_id)) map.set(a.question_id, a.value);
+      const map = new Map<string, number | "na">();
+      for (const a of state.answered) if (qs?.some((q) => q.id === a.question_id)) map.set(a.question_id, a.text_value ? "na" : (a.value as number));
       setAnswers(map);
       setCursor(resumeQuestion(qs ?? [], map.keys(), state.assessment.current_question_id));
     })().catch(() => setLoadError(true));
@@ -136,14 +136,14 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
     });
   }, [questions, answers]);
 
-  async function handleAnswer(value: number) {
+  async function handleAnswer(value: number | "na") {
     if (!currentQ || !assessmentId || saving) return;
     setSaving(true);
     const next = new Map(answers);
     next.set(currentQ.id, value);
     try {
       await submit({
-        data: { assessmentId, questionId: currentQ.id, value },
+        data: value === "na" ? { assessmentId, questionId: currentQ.id, value: null, notApplicable: true } : { assessmentId, questionId: currentQ.id, value },
       });
       setAnswers(next);
       await queryClient.invalidateQueries({ queryKey: ["family-forms"] });
@@ -221,6 +221,11 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
             {totalAnswered} / {total} · {progress}%
           </span>
         </div>
+        {currentQ.module === "functional" && (
+          <p className="mt-2 text-xs text-foreground">
+            Si una situación no se ha presentado o no has podido observarla, elige 'No aplica / No observable'.
+          </p>
+        )}
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
           <div
             className="h-full rounded-full bg-primary transition-all"
@@ -285,6 +290,21 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
             );
           })}
         </div>
+
+        {currentQ.scale === "func10" && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleAnswer("na")}
+            disabled={saving}
+            className={cn(
+              "mt-4 h-auto w-full whitespace-normal rounded-2xl border-dashed px-4 py-3 text-sm font-medium",
+              selectedValue === "na" && "border-solid border-primary bg-primary text-primary-foreground",
+            )}
+          >
+            No aplica / No observable
+          </Button>
+        )}
 
         <p className="mt-4 text-[11px] text-muted-foreground">
           {saving ? "Guardando…" : "Autoguardado activo. Puedes salir y retomar."}
