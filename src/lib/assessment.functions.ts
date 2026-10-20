@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { NOT_APPLICABLE } from "./form-progress";
 import { z } from "zod";
 import { allFormsCompleted, formProgress } from "./form-progress";
 
@@ -42,7 +43,7 @@ export const getAssessmentState = createServerFn({ method: "GET" })
 
     const { data: answers, error: answerError } = await supabase
       .from("assessment_answers")
-      .select("question_id, value")
+      .select("question_id, value, text_value")
       .eq("assessment_id", assessment.id);
     if (answerError) throw answerError;
 
@@ -51,23 +52,30 @@ export const getAssessmentState = createServerFn({ method: "GET" })
 
 export const saveAnswer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { assessmentId: string; questionId: string; value: number }) =>
+  .inputValidator((d: { assessmentId: string; questionId: string; value: number | null; notApplicable?: boolean }) =>
     z
       .object({
         assessmentId: z.string().uuid(),
         questionId: z.string().uuid(),
-        value: z.number().int().min(0).max(10),
+        value: z.number().int().min(0).max(10).nullable(),
+        notApplicable: z.boolean().optional(),
       })
+      .refine((v) => (v.notApplicable ? v.value === null : v.value !== null))
       .parse(d),
   )
   .handler(async ({ data, context }) => {
     const owned = await context.supabase.from("assessments").select("id").eq("id", data.assessmentId).eq("user_id", context.userId).maybeSingle();
     if (owned.error || !owned.data) throw new Error("Formulario no encontrado");
+    if (data.notApplicable) {
+      const q = await context.supabase.from("assessment_questions").select("scale").eq("id", data.questionId).maybeSingle();
+      if (q.error || q.data?.scale !== "func10") throw new Error("Opción no disponible");
+    }
     const { error } = await context.supabase.from("assessment_answers").upsert(
       {
         assessment_id: data.assessmentId,
         question_id: data.questionId,
-        value: data.value,
+        value: data.notApplicable ? null : data.value,
+        text_value: data.notApplicable ? NOT_APPLICABLE : null,
       },
       { onConflict: "assessment_id,question_id" },
     );
