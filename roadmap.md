@@ -1,4 +1,6 @@
-- [ ] Simplificar navegación y desactivar pagos, IA y resultados sin borrar datos.
-- [ ] Conservar formularios, autoguardado y pantalla final exacta.
-- [ ] Añadir revisión administrativa completa y exportaciones CSV.
-- [ ] Verificar permisos, recuperación de contraseña y flujos.
+- [x] Simplificar navegación y desactivar pagos, IA y resultados sin borrar datos.
+- [x] Conservar formularios, autoguardado y pantalla final exacta.
+- [x] Añadir revisión administrativa completa y exportaciones CSV compatibles con Excel.
+- [x] Comprobar permisos y acceso familiar; pruebas automatizadas aprobadas.
+- [ ] Verificar en la cuenta administradora la lectura y exportación completas: acceso de prueba no autorizado.
+- [ ] Completar prueba real de guardado/reanudación de los tres formularios y recuperación mediante correo: pendiente al cerrar la sesión de trabajo.
