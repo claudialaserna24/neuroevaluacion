@@ -17,6 +17,15 @@ export function allFormsCompleted(forms: { status: string }[]) {
   return forms.length === 3 && forms.every((f) => f.status === "Completado");
 }
 export function canAdminRead(roles: string[]) { return roles.includes("administrador"); }
+export function resumeQuestion(questions: { id: string }[], answered: Iterable<string>, lastId: string | null) {
+  const saved = new Set(answered);
+  const last = questions.findIndex((q) => q.id === lastId);
+  // A saved question advances to the next one; an unanswered cursor stays put.
+  if (last >= 0 && !saved.has(questions[last].id)) return last;
+  if (last >= 0 && last < questions.length - 1 && !saved.has(questions[last + 1].id)) return last + 1;
+  const missing = questions.findIndex((q) => !saved.has(q.id));
+  return missing >= 0 ? missing : Math.max(0, questions.length - 1);
+}
 export function answerLabel(scale: string, value: number | null | undefined) {
   if (value == null) return "Sin respuesta";
   if (scale === "cog3") return ["Nunca", "Algunas veces", "Siempre"][value] ?? String(value);

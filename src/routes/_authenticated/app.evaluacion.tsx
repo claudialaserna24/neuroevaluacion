@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { pageMeta } from "@/lib/page-meta";
+import { resumeQuestion } from "@/lib/form-progress";
 
 export const Route = createFileRoute("/_authenticated/app/evaluacion")({
   head: () => pageMeta("Completar formularios"),
@@ -115,10 +116,7 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
       const map = new Map<string, number>();
       for (const a of state.answered) if (qs?.some((q) => q.id === a.question_id)) map.set(a.question_id, a.value);
       setAnswers(map);
-      const last = qs?.findIndex((q) => q.id === state.assessment.current_question_id) ?? -1;
-      const missing = (qs ?? []).findIndex((q) => !map.has(q.id));
-      const resumed = last >= 0 && last < (qs?.length ?? 0) - 1 ? last + 1 : missing;
-      setCursor(resumed < 0 ? Math.max(0, (qs?.length ?? 1) - 1) : resumed);
+      setCursor(resumeQuestion(qs ?? [], map.keys(), state.assessment.current_question_id));
     })().catch(() => setLoadError(true));
     }, [fetchState, patientId, selectedModule]);
 
@@ -137,7 +135,7 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
   }, [questions, answers]);
 
   async function handleAnswer(value: number) {
-    if (!currentQ || !assessmentId) return;
+    if (!currentQ || !assessmentId || saving) return;
     setSaving(true);
     const next = new Map(answers);
     next.set(currentQ.id, value);
@@ -295,7 +293,8 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
         <Button
           type="button"
           onClick={() => setCursor(Math.max(0, cursor - 1))}
-          disabled={cursor === 0}
+          disabled={cursor === 0 || saving}
+          variant="ghost"
           className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4" />
