@@ -9,58 +9,57 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as McpRouteImport } from './routes/mcp'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
-import { Route as ApiMoholkaRouteImport } from './routes/api/moholka'
-import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
-import { Route as AuthenticatedConsentimientoRouteImport } from './routes/_authenticated/consentimiento'
-import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
-import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
-import { Route as ApiPublicWompiWebhookRouteImport } from './routes/api/public/wompi-webhook'
-import { Route as ApiPublicPlanGenerateRouteImport } from './routes/api/public/plan-generate'
-import { Route as AuthenticatedAppSeguimientoRouteImport } from './routes/_authenticated/app.seguimiento'
-import { Route as AuthenticatedAppPlanInteractivoRouteImport } from './routes/_authenticated/app.plan-interactivo'
-import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
-import { Route as AuthenticatedAppPacientesRouteImport } from './routes/_authenticated/app.pacientes'
-import { Route as AuthenticatedAppMiPlanRouteImport } from './routes/_authenticated/app.mi-plan'
-import { Route as AuthenticatedAppManualRouteImport } from './routes/_authenticated/app.manual'
-import { Route as AuthenticatedAppInformeRouteImport } from './routes/_authenticated/app.informe'
-import { Route as AuthenticatedAppHojaDeRutaRouteImport } from './routes/_authenticated/app.hoja-de-ruta'
-import { Route as AuthenticatedAppFichaRouteImport } from './routes/_authenticated/app.ficha'
-import { Route as AuthenticatedAppEvaluacionesRouteImport } from './routes/_authenticated/app.evaluaciones'
-import { Route as AuthenticatedAppEvaluacionRouteImport } from './routes/_authenticated/app.evaluacion'
-import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
+import { Route as AuthenticatedConsentimientoRouteImport } from './routes/_authenticated/consentimiento'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as ApiMoholkaRouteImport } from './routes/api/moholka'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
+import { Route as AuthenticatedAppEvaluacionRouteImport } from './routes/_authenticated/app.evaluacion'
+import { Route as AuthenticatedAppEvaluacionesRouteImport } from './routes/_authenticated/app.evaluaciones'
+import { Route as AuthenticatedAppFichaRouteImport } from './routes/_authenticated/app.ficha'
+import { Route as AuthenticatedAppHojaDeRutaRouteImport } from './routes/_authenticated/app.hoja-de-ruta'
+import { Route as AuthenticatedAppInformeRouteImport } from './routes/_authenticated/app.informe'
+import { Route as AuthenticatedAppManualRouteImport } from './routes/_authenticated/app.manual'
+import { Route as AuthenticatedAppMiPlanRouteImport } from './routes/_authenticated/app.mi-plan'
+import { Route as AuthenticatedAppPacientesRouteImport } from './routes/_authenticated/app.pacientes'
+import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
+import { Route as AuthenticatedAppPlanInteractivoRouteImport } from './routes/_authenticated/app.plan-interactivo'
+import { Route as AuthenticatedAppSeguimientoRouteImport } from './routes/_authenticated/app.seguimiento'
+import { Route as ApiPublicPlanGenerateRouteImport } from './routes/api/public/plan-generate'
+import { Route as ApiPublicWompiWebhookRouteImport } from './routes/api/public/wompi-webhook'
 import { Route as AuthenticatedAppAdminIndexRouteImport } from './routes/_authenticated/app.admin.index'
-import { Route as AuthenticatedAppPlanPatientIdRouteImport } from './routes/_authenticated/app.plan.$patientId'
-import { Route as AuthenticatedAppPacientesPatientIdRouteImport } from './routes/_authenticated/app.pacientes.$patientId'
-import { Route as AuthenticatedAppAdminPagosRouteImport } from './routes/_authenticated/app.admin.pagos'
-import { Route as AuthenticatedAppAdminPacientesRouteImport } from './routes/_authenticated/app.admin.pacientes'
-import { Route as AuthenticatedAppAdminManualRouteImport } from './routes/_authenticated/app.admin.manual'
-import { Route as AuthenticatedAppAdminHojasDeRutaRouteImport } from './routes/_authenticated/app.admin.hojas-de-ruta'
-import { Route as AuthenticatedAppAdminFamiliasRouteImport } from './routes/_authenticated/app.admin.familias'
-import { Route as AuthenticatedAppAdminEvaluacionesRouteImport } from './routes/_authenticated/app.admin.evaluaciones'
 import { Route as AuthenticatedAppAdminCerebroRouteImport } from './routes/_authenticated/app.admin.cerebro'
-import { Route as AuthenticatedAppPlanPatientIdVerRouteImport } from './routes/_authenticated/app.plan.$patientId.ver'
-import { Route as AuthenticatedAppAdminUsuariosUserIdRouteImport } from './routes/_authenticated/app.admin.usuarios.$userId'
+import { Route as AuthenticatedAppAdminEvaluacionesRouteImport } from './routes/_authenticated/app.admin.evaluaciones'
+import { Route as AuthenticatedAppAdminFamiliasRouteImport } from './routes/_authenticated/app.admin.familias'
+import { Route as AuthenticatedAppAdminHojasDeRutaRouteImport } from './routes/_authenticated/app.admin.hojas-de-ruta'
+import { Route as AuthenticatedAppAdminManualRouteImport } from './routes/_authenticated/app.admin.manual'
+import { Route as AuthenticatedAppAdminPacientesRouteImport } from './routes/_authenticated/app.admin.pacientes'
+import { Route as AuthenticatedAppAdminPagosRouteImport } from './routes/_authenticated/app.admin.pagos'
+import { Route as AuthenticatedAppPacientesPatientIdRouteImport } from './routes/_authenticated/app.pacientes.$patientId'
+import { Route as AuthenticatedAppPlanPatientIdRouteImport } from './routes/_authenticated/app.plan.$patientId'
 import { Route as AuthenticatedAppAdminPacientesPatientIdRouteImport } from './routes/_authenticated/app.admin.pacientes.$patientId'
+import { Route as AuthenticatedAppAdminUsuariosUserIdRouteImport } from './routes/_authenticated/app.admin.usuarios.$userId'
+import { Route as AuthenticatedAppPlanPatientIdVerRouteImport } from './routes/_authenticated/app.plan.$patientId.ver'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -68,28 +67,36 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
-  id: '/checkout/return',
-  path: '/checkout/return',
-  getParentRoute: () => rootRouteImport,
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiMoholkaRoute = ApiMoholkaRouteImport.update({
-  id: '/api/moholka',
-  path: '/api/moholka',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
+const AuthenticatedCheckoutRoute = AuthenticatedCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConsentimientoRoute =
@@ -98,26 +105,30 @@ const AuthenticatedConsentimientoRoute =
     path: '/consentimiento',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedCheckoutRoute = AuthenticatedCheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
-  id: '/app',
-  path: '/app',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const ApiMoholkaRoute = ApiMoholkaRouteImport.update({
+  id: '/api/moholka',
+  path: '/api/moholka',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
@@ -125,52 +136,26 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const ApiPublicWompiWebhookRoute = ApiPublicWompiWebhookRouteImport.update({
-  id: '/api/public/wompi-webhook',
-  path: '/api/public/wompi-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicPlanGenerateRoute = ApiPublicPlanGenerateRouteImport.update({
-  id: '/api/public/plan-generate',
-  path: '/api/public/plan-generate',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedAppSeguimientoRoute =
-  AuthenticatedAppSeguimientoRouteImport.update({
-    id: '/seguimiento',
-    path: '/seguimiento',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppPlanInteractivoRoute =
-  AuthenticatedAppPlanInteractivoRouteImport.update({
-    id: '/plan-interactivo',
-    path: '/plan-interactivo',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
+const AuthenticatedAppAdminRoute = AuthenticatedAppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppPacientesRoute =
-  AuthenticatedAppPacientesRouteImport.update({
-    id: '/pacientes',
-    path: '/pacientes',
+const AuthenticatedAppEvaluacionRoute =
+  AuthenticatedAppEvaluacionRouteImport.update({
+    id: '/evaluacion',
+    path: '/evaluacion',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const AuthenticatedAppMiPlanRoute = AuthenticatedAppMiPlanRouteImport.update({
-  id: '/mi-plan',
-  path: '/mi-plan',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppManualRoute = AuthenticatedAppManualRouteImport.update({
-  id: '/manual',
-  path: '/manual',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppInformeRoute = AuthenticatedAppInformeRouteImport.update({
-  id: '/informe',
-  path: '/informe',
+const AuthenticatedAppEvaluacionesRoute =
+  AuthenticatedAppEvaluacionesRouteImport.update({
+    id: '/evaluaciones',
+    path: '/evaluaciones',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppFichaRoute = AuthenticatedAppFichaRouteImport.update({
+  id: '/ficha',
+  path: '/ficha',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
 const AuthenticatedAppHojaDeRutaRoute =
@@ -179,37 +164,52 @@ const AuthenticatedAppHojaDeRutaRoute =
     path: '/hoja-de-ruta',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const AuthenticatedAppFichaRoute = AuthenticatedAppFichaRouteImport.update({
-  id: '/ficha',
-  path: '/ficha',
+const AuthenticatedAppInformeRoute = AuthenticatedAppInformeRouteImport.update({
+  id: '/informe',
+  path: '/informe',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppEvaluacionesRoute =
-  AuthenticatedAppEvaluacionesRouteImport.update({
-    id: '/evaluaciones',
-    path: '/evaluaciones',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppEvaluacionRoute =
-  AuthenticatedAppEvaluacionRouteImport.update({
-    id: '/evaluacion',
-    path: '/evaluacion',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAdminRoute = AuthenticatedAppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedAppManualRoute = AuthenticatedAppManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAppMiPlanRoute = AuthenticatedAppMiPlanRouteImport.update({
+  id: '/mi-plan',
+  path: '/mi-plan',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppPacientesRoute =
+  AuthenticatedAppPacientesRouteImport.update({
+    id: '/pacientes',
+    path: '/pacientes',
+    getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
+const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppPlanInteractivoRoute =
+  AuthenticatedAppPlanInteractivoRouteImport.update({
+    id: '/plan-interactivo',
+    path: '/plan-interactivo',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSeguimientoRoute =
+  AuthenticatedAppSeguimientoRouteImport.update({
+    id: '/seguimiento',
+    path: '/seguimiento',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const ApiPublicPlanGenerateRoute = ApiPublicPlanGenerateRouteImport.update({
+  id: '/api/public/plan-generate',
+  path: '/api/public/plan-generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWompiWebhookRoute = ApiPublicWompiWebhookRouteImport.update({
+  id: '/api/public/wompi-webhook',
+  path: '/api/public/wompi-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppAdminIndexRoute =
@@ -218,46 +218,10 @@ const AuthenticatedAppAdminIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAppAdminRoute,
   } as any)
-const AuthenticatedAppPlanPatientIdRoute =
-  AuthenticatedAppPlanPatientIdRouteImport.update({
-    id: '/plan/$patientId',
-    path: '/plan/$patientId',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppPacientesPatientIdRoute =
-  AuthenticatedAppPacientesPatientIdRouteImport.update({
-    id: '/$patientId',
-    path: '/$patientId',
-    getParentRoute: () => AuthenticatedAppPacientesRoute,
-  } as any)
-const AuthenticatedAppAdminPagosRoute =
-  AuthenticatedAppAdminPagosRouteImport.update({
-    id: '/pagos',
-    path: '/pagos',
-    getParentRoute: () => AuthenticatedAppAdminRoute,
-  } as any)
-const AuthenticatedAppAdminPacientesRoute =
-  AuthenticatedAppAdminPacientesRouteImport.update({
-    id: '/pacientes',
-    path: '/pacientes',
-    getParentRoute: () => AuthenticatedAppAdminRoute,
-  } as any)
-const AuthenticatedAppAdminManualRoute =
-  AuthenticatedAppAdminManualRouteImport.update({
-    id: '/manual',
-    path: '/manual',
-    getParentRoute: () => AuthenticatedAppAdminRoute,
-  } as any)
-const AuthenticatedAppAdminHojasDeRutaRoute =
-  AuthenticatedAppAdminHojasDeRutaRouteImport.update({
-    id: '/hojas-de-ruta',
-    path: '/hojas-de-ruta',
-    getParentRoute: () => AuthenticatedAppAdminRoute,
-  } as any)
-const AuthenticatedAppAdminFamiliasRoute =
-  AuthenticatedAppAdminFamiliasRouteImport.update({
-    id: '/familias',
-    path: '/familias',
+const AuthenticatedAppAdminCerebroRoute =
+  AuthenticatedAppAdminCerebroRouteImport.update({
+    id: '/cerebro',
+    path: '/cerebro',
     getParentRoute: () => AuthenticatedAppAdminRoute,
   } as any)
 const AuthenticatedAppAdminEvaluacionesRoute =
@@ -266,17 +230,53 @@ const AuthenticatedAppAdminEvaluacionesRoute =
     path: '/evaluaciones',
     getParentRoute: () => AuthenticatedAppAdminRoute,
   } as any)
-const AuthenticatedAppAdminCerebroRoute =
-  AuthenticatedAppAdminCerebroRouteImport.update({
-    id: '/cerebro',
-    path: '/cerebro',
+const AuthenticatedAppAdminFamiliasRoute =
+  AuthenticatedAppAdminFamiliasRouteImport.update({
+    id: '/familias',
+    path: '/familias',
     getParentRoute: () => AuthenticatedAppAdminRoute,
   } as any)
-const AuthenticatedAppPlanPatientIdVerRoute =
-  AuthenticatedAppPlanPatientIdVerRouteImport.update({
-    id: '/ver',
-    path: '/ver',
-    getParentRoute: () => AuthenticatedAppPlanPatientIdRoute,
+const AuthenticatedAppAdminHojasDeRutaRoute =
+  AuthenticatedAppAdminHojasDeRutaRouteImport.update({
+    id: '/hojas-de-ruta',
+    path: '/hojas-de-ruta',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
+const AuthenticatedAppAdminManualRoute =
+  AuthenticatedAppAdminManualRouteImport.update({
+    id: '/manual',
+    path: '/manual',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
+const AuthenticatedAppAdminPacientesRoute =
+  AuthenticatedAppAdminPacientesRouteImport.update({
+    id: '/pacientes',
+    path: '/pacientes',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
+const AuthenticatedAppAdminPagosRoute =
+  AuthenticatedAppAdminPagosRouteImport.update({
+    id: '/pagos',
+    path: '/pagos',
+    getParentRoute: () => AuthenticatedAppAdminRoute,
+  } as any)
+const AuthenticatedAppPacientesPatientIdRoute =
+  AuthenticatedAppPacientesPatientIdRouteImport.update({
+    id: '/$patientId',
+    path: '/$patientId',
+    getParentRoute: () => AuthenticatedAppPacientesRoute,
+  } as any)
+const AuthenticatedAppPlanPatientIdRoute =
+  AuthenticatedAppPlanPatientIdRouteImport.update({
+    id: '/plan/$patientId',
+    path: '/plan/$patientId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAdminPacientesPatientIdRoute =
+  AuthenticatedAppAdminPacientesPatientIdRouteImport.update({
+    id: '/$patientId',
+    path: '/$patientId',
+    getParentRoute: () => AuthenticatedAppAdminPacientesRoute,
   } as any)
 const AuthenticatedAppAdminUsuariosUserIdRoute =
   AuthenticatedAppAdminUsuariosUserIdRouteImport.update({
@@ -284,11 +284,11 @@ const AuthenticatedAppAdminUsuariosUserIdRoute =
     path: '/usuarios/$userId',
     getParentRoute: () => AuthenticatedAppAdminRoute,
   } as any)
-const AuthenticatedAppAdminPacientesPatientIdRoute =
-  AuthenticatedAppAdminPacientesPatientIdRouteImport.update({
-    id: '/$patientId',
-    path: '/$patientId',
-    getParentRoute: () => AuthenticatedAppAdminPacientesRoute,
+const AuthenticatedAppPlanPatientIdVerRoute =
+  AuthenticatedAppPlanPatientIdVerRouteImport.update({
+    id: '/ver',
+    path: '/ver',
+    getParentRoute: () => AuthenticatedAppPlanPatientIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -575,25 +575,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -603,60 +589,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/checkout/return': {
-      id: '/checkout/return'
-      path: '/checkout/return'
-      fullPath: '/checkout/return'
-      preLoaderRoute: typeof CheckoutReturnRouteImport
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/moholka': {
-      id: '/api/moholka'
-      path: '/api/moholka'
-      fullPath: '/api/moholka'
-      preLoaderRoute: typeof ApiMoholkaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/onboarding': {
-      id: '/_authenticated/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/consentimiento': {
-      id: '/_authenticated/consentimiento'
-      path: '/consentimiento'
-      fullPath: '/consentimiento'
-      preLoaderRoute: typeof AuthenticatedConsentimientoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/checkout': {
-      id: '/_authenticated/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof AuthenticatedCheckoutRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/app': {
-      id: '/_authenticated/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AuthenticatedAppRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/list-tools': {
@@ -666,116 +617,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/app/': {
-      id: '/_authenticated/app/'
-      path: '/'
-      fullPath: '/app/'
-      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/api/public/wompi-webhook': {
-      id: '/api/public/wompi-webhook'
-      path: '/api/public/wompi-webhook'
-      fullPath: '/api/public/wompi-webhook'
-      preLoaderRoute: typeof ApiPublicWompiWebhookRouteImport
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/plan-generate': {
-      id: '/api/public/plan-generate'
-      path: '/api/public/plan-generate'
-      fullPath: '/api/public/plan-generate'
-      preLoaderRoute: typeof ApiPublicPlanGenerateRouteImport
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/checkout': {
+      id: '/_authenticated/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof AuthenticatedCheckoutRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/consentimiento': {
+      id: '/_authenticated/consentimiento'
+      path: '/consentimiento'
+      fullPath: '/consentimiento'
+      preLoaderRoute: typeof AuthenticatedConsentimientoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/moholka': {
+      id: '/api/moholka'
+      path: '/api/moholka'
+      fullPath: '/api/moholka'
+      preLoaderRoute: typeof ApiMoholkaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/app/seguimiento': {
-      id: '/_authenticated/app/seguimiento'
-      path: '/seguimiento'
-      fullPath: '/app/seguimiento'
-      preLoaderRoute: typeof AuthenticatedAppSeguimientoRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/plan-interactivo': {
-      id: '/_authenticated/app/plan-interactivo'
-      path: '/plan-interactivo'
-      fullPath: '/app/plan-interactivo'
-      preLoaderRoute: typeof AuthenticatedAppPlanInteractivoRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/perfil': {
-      id: '/_authenticated/app/perfil'
-      path: '/perfil'
-      fullPath: '/app/perfil'
-      preLoaderRoute: typeof AuthenticatedAppPerfilRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/pacientes': {
-      id: '/_authenticated/app/pacientes'
-      path: '/pacientes'
-      fullPath: '/app/pacientes'
-      preLoaderRoute: typeof AuthenticatedAppPacientesRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/mi-plan': {
-      id: '/_authenticated/app/mi-plan'
-      path: '/mi-plan'
-      fullPath: '/app/mi-plan'
-      preLoaderRoute: typeof AuthenticatedAppMiPlanRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/manual': {
-      id: '/_authenticated/app/manual'
-      path: '/manual'
-      fullPath: '/app/manual'
-      preLoaderRoute: typeof AuthenticatedAppManualRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/informe': {
-      id: '/_authenticated/app/informe'
-      path: '/informe'
-      fullPath: '/app/informe'
-      preLoaderRoute: typeof AuthenticatedAppInformeRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/hoja-de-ruta': {
-      id: '/_authenticated/app/hoja-de-ruta'
-      path: '/hoja-de-ruta'
-      fullPath: '/app/hoja-de-ruta'
-      preLoaderRoute: typeof AuthenticatedAppHojaDeRutaRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/ficha': {
-      id: '/_authenticated/app/ficha'
-      path: '/ficha'
-      fullPath: '/app/ficha'
-      preLoaderRoute: typeof AuthenticatedAppFichaRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/evaluaciones': {
-      id: '/_authenticated/app/evaluaciones'
-      path: '/evaluaciones'
-      fullPath: '/app/evaluaciones'
-      preLoaderRoute: typeof AuthenticatedAppEvaluacionesRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/evaluacion': {
-      id: '/_authenticated/app/evaluacion'
-      path: '/evaluacion'
-      fullPath: '/app/evaluacion'
-      preLoaderRoute: typeof AuthenticatedAppEvaluacionRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/admin': {
-      id: '/_authenticated/app/admin'
-      path: '/admin'
-      fullPath: '/app/admin'
-      preLoaderRoute: typeof AuthenticatedAppAdminRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.lovable/oauth/consent': {
@@ -785,67 +673,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/app/': {
+      id: '/_authenticated/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/admin': {
+      id: '/_authenticated/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AuthenticatedAppAdminRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/evaluacion': {
+      id: '/_authenticated/app/evaluacion'
+      path: '/evaluacion'
+      fullPath: '/app/evaluacion'
+      preLoaderRoute: typeof AuthenticatedAppEvaluacionRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/evaluaciones': {
+      id: '/_authenticated/app/evaluaciones'
+      path: '/evaluaciones'
+      fullPath: '/app/evaluaciones'
+      preLoaderRoute: typeof AuthenticatedAppEvaluacionesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/ficha': {
+      id: '/_authenticated/app/ficha'
+      path: '/ficha'
+      fullPath: '/app/ficha'
+      preLoaderRoute: typeof AuthenticatedAppFichaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/hoja-de-ruta': {
+      id: '/_authenticated/app/hoja-de-ruta'
+      path: '/hoja-de-ruta'
+      fullPath: '/app/hoja-de-ruta'
+      preLoaderRoute: typeof AuthenticatedAppHojaDeRutaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/informe': {
+      id: '/_authenticated/app/informe'
+      path: '/informe'
+      fullPath: '/app/informe'
+      preLoaderRoute: typeof AuthenticatedAppInformeRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/manual': {
+      id: '/_authenticated/app/manual'
+      path: '/manual'
+      fullPath: '/app/manual'
+      preLoaderRoute: typeof AuthenticatedAppManualRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/mi-plan': {
+      id: '/_authenticated/app/mi-plan'
+      path: '/mi-plan'
+      fullPath: '/app/mi-plan'
+      preLoaderRoute: typeof AuthenticatedAppMiPlanRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/pacientes': {
+      id: '/_authenticated/app/pacientes'
+      path: '/pacientes'
+      fullPath: '/app/pacientes'
+      preLoaderRoute: typeof AuthenticatedAppPacientesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/perfil': {
+      id: '/_authenticated/app/perfil'
+      path: '/perfil'
+      fullPath: '/app/perfil'
+      preLoaderRoute: typeof AuthenticatedAppPerfilRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/plan-interactivo': {
+      id: '/_authenticated/app/plan-interactivo'
+      path: '/plan-interactivo'
+      fullPath: '/app/plan-interactivo'
+      preLoaderRoute: typeof AuthenticatedAppPlanInteractivoRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/seguimiento': {
+      id: '/_authenticated/app/seguimiento'
+      path: '/seguimiento'
+      fullPath: '/app/seguimiento'
+      preLoaderRoute: typeof AuthenticatedAppSeguimientoRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/api/public/plan-generate': {
+      id: '/api/public/plan-generate'
+      path: '/api/public/plan-generate'
+      fullPath: '/api/public/plan-generate'
+      preLoaderRoute: typeof ApiPublicPlanGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/wompi-webhook': {
+      id: '/api/public/wompi-webhook'
+      path: '/api/public/wompi-webhook'
+      fullPath: '/api/public/wompi-webhook'
+      preLoaderRoute: typeof ApiPublicWompiWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/admin/': {
       id: '/_authenticated/app/admin/'
       path: '/'
       fullPath: '/app/admin/'
       preLoaderRoute: typeof AuthenticatedAppAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedAppAdminRoute
-    }
-    '/_authenticated/app/plan/$patientId': {
-      id: '/_authenticated/app/plan/$patientId'
-      path: '/plan/$patientId'
-      fullPath: '/app/plan/$patientId'
-      preLoaderRoute: typeof AuthenticatedAppPlanPatientIdRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/pacientes/$patientId': {
-      id: '/_authenticated/app/pacientes/$patientId'
-      path: '/$patientId'
-      fullPath: '/app/pacientes/$patientId'
-      preLoaderRoute: typeof AuthenticatedAppPacientesPatientIdRouteImport
-      parentRoute: typeof AuthenticatedAppPacientesRoute
-    }
-    '/_authenticated/app/admin/pagos': {
-      id: '/_authenticated/app/admin/pagos'
-      path: '/pagos'
-      fullPath: '/app/admin/pagos'
-      preLoaderRoute: typeof AuthenticatedAppAdminPagosRouteImport
-      parentRoute: typeof AuthenticatedAppAdminRoute
-    }
-    '/_authenticated/app/admin/pacientes': {
-      id: '/_authenticated/app/admin/pacientes'
-      path: '/pacientes'
-      fullPath: '/app/admin/pacientes'
-      preLoaderRoute: typeof AuthenticatedAppAdminPacientesRouteImport
-      parentRoute: typeof AuthenticatedAppAdminRoute
-    }
-    '/_authenticated/app/admin/manual': {
-      id: '/_authenticated/app/admin/manual'
-      path: '/manual'
-      fullPath: '/app/admin/manual'
-      preLoaderRoute: typeof AuthenticatedAppAdminManualRouteImport
-      parentRoute: typeof AuthenticatedAppAdminRoute
-    }
-    '/_authenticated/app/admin/hojas-de-ruta': {
-      id: '/_authenticated/app/admin/hojas-de-ruta'
-      path: '/hojas-de-ruta'
-      fullPath: '/app/admin/hojas-de-ruta'
-      preLoaderRoute: typeof AuthenticatedAppAdminHojasDeRutaRouteImport
-      parentRoute: typeof AuthenticatedAppAdminRoute
-    }
-    '/_authenticated/app/admin/familias': {
-      id: '/_authenticated/app/admin/familias'
-      path: '/familias'
-      fullPath: '/app/admin/familias'
-      preLoaderRoute: typeof AuthenticatedAppAdminFamiliasRouteImport
-      parentRoute: typeof AuthenticatedAppAdminRoute
-    }
-    '/_authenticated/app/admin/evaluaciones': {
-      id: '/_authenticated/app/admin/evaluaciones'
-      path: '/evaluaciones'
-      fullPath: '/app/admin/evaluaciones'
-      preLoaderRoute: typeof AuthenticatedAppAdminEvaluacionesRouteImport
       parentRoute: typeof AuthenticatedAppAdminRoute
     }
     '/_authenticated/app/admin/cerebro': {
@@ -855,12 +799,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAdminCerebroRouteImport
       parentRoute: typeof AuthenticatedAppAdminRoute
     }
-    '/_authenticated/app/plan/$patientId/ver': {
-      id: '/_authenticated/app/plan/$patientId/ver'
-      path: '/ver'
-      fullPath: '/app/plan/$patientId/ver'
-      preLoaderRoute: typeof AuthenticatedAppPlanPatientIdVerRouteImport
-      parentRoute: typeof AuthenticatedAppPlanPatientIdRoute
+    '/_authenticated/app/admin/evaluaciones': {
+      id: '/_authenticated/app/admin/evaluaciones'
+      path: '/evaluaciones'
+      fullPath: '/app/admin/evaluaciones'
+      preLoaderRoute: typeof AuthenticatedAppAdminEvaluacionesRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/admin/familias': {
+      id: '/_authenticated/app/admin/familias'
+      path: '/familias'
+      fullPath: '/app/admin/familias'
+      preLoaderRoute: typeof AuthenticatedAppAdminFamiliasRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/admin/hojas-de-ruta': {
+      id: '/_authenticated/app/admin/hojas-de-ruta'
+      path: '/hojas-de-ruta'
+      fullPath: '/app/admin/hojas-de-ruta'
+      preLoaderRoute: typeof AuthenticatedAppAdminHojasDeRutaRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/admin/manual': {
+      id: '/_authenticated/app/admin/manual'
+      path: '/manual'
+      fullPath: '/app/admin/manual'
+      preLoaderRoute: typeof AuthenticatedAppAdminManualRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/admin/pacientes': {
+      id: '/_authenticated/app/admin/pacientes'
+      path: '/pacientes'
+      fullPath: '/app/admin/pacientes'
+      preLoaderRoute: typeof AuthenticatedAppAdminPacientesRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/admin/pagos': {
+      id: '/_authenticated/app/admin/pagos'
+      path: '/pagos'
+      fullPath: '/app/admin/pagos'
+      preLoaderRoute: typeof AuthenticatedAppAdminPagosRouteImport
+      parentRoute: typeof AuthenticatedAppAdminRoute
+    }
+    '/_authenticated/app/pacientes/$patientId': {
+      id: '/_authenticated/app/pacientes/$patientId'
+      path: '/$patientId'
+      fullPath: '/app/pacientes/$patientId'
+      preLoaderRoute: typeof AuthenticatedAppPacientesPatientIdRouteImport
+      parentRoute: typeof AuthenticatedAppPacientesRoute
+    }
+    '/_authenticated/app/plan/$patientId': {
+      id: '/_authenticated/app/plan/$patientId'
+      path: '/plan/$patientId'
+      fullPath: '/app/plan/$patientId'
+      preLoaderRoute: typeof AuthenticatedAppPlanPatientIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/admin/pacientes/$patientId': {
+      id: '/_authenticated/app/admin/pacientes/$patientId'
+      path: '/$patientId'
+      fullPath: '/app/admin/pacientes/$patientId'
+      preLoaderRoute: typeof AuthenticatedAppAdminPacientesPatientIdRouteImport
+      parentRoute: typeof AuthenticatedAppAdminPacientesRoute
     }
     '/_authenticated/app/admin/usuarios/$userId': {
       id: '/_authenticated/app/admin/usuarios/$userId'
@@ -869,12 +869,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAdminUsuariosUserIdRouteImport
       parentRoute: typeof AuthenticatedAppAdminRoute
     }
-    '/_authenticated/app/admin/pacientes/$patientId': {
-      id: '/_authenticated/app/admin/pacientes/$patientId'
-      path: '/$patientId'
-      fullPath: '/app/admin/pacientes/$patientId'
-      preLoaderRoute: typeof AuthenticatedAppAdminPacientesPatientIdRouteImport
-      parentRoute: typeof AuthenticatedAppAdminPacientesRoute
+    '/_authenticated/app/plan/$patientId/ver': {
+      id: '/_authenticated/app/plan/$patientId/ver'
+      path: '/ver'
+      fullPath: '/app/plan/$patientId/ver'
+      preLoaderRoute: typeof AuthenticatedAppPlanPatientIdVerRouteImport
+      parentRoute: typeof AuthenticatedAppPlanPatientIdRoute
     }
   }
 }
