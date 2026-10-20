@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { pageMeta } from "@/lib/page-meta";
 import { resumeQuestion } from "@/lib/form-progress";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/app/evaluacion")({
   head: () => pageMeta("Completar formularios"),
@@ -66,6 +67,7 @@ function EvaluacionPage() {
 }
 
 function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; selectedModule?: string }) {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const fetchState = useServerFn(getAssessmentState);
   const submit = useServerFn(saveAnswer);
@@ -144,6 +146,7 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
         data: { assessmentId, questionId: currentQ.id, value },
       });
       setAnswers(next);
+      await queryClient.invalidateQueries({ queryKey: ["family-forms"] });
       if (cursor < total - 1) setCursor(cursor + 1);
       else if (next.size === total) {
         await complete({ data: { assessmentId } });

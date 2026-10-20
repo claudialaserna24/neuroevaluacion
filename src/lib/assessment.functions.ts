@@ -20,11 +20,15 @@ export const getAssessmentState = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!patient) throw new Error("Paciente no encontrado");
 
-    let { data: assessment } = await supabase
+    let { data: assessment, error: stateError } = await supabase
       .from("assessments")
       .select("*")
       .eq("patient_id", data.patientId)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
+    if (stateError) throw stateError;
 
     if (!assessment) {
       const { data: created, error } = await supabase
@@ -36,10 +40,11 @@ export const getAssessmentState = createServerFn({ method: "GET" })
       assessment = created;
     }
 
-    const { data: answers } = await supabase
+    const { data: answers, error: answerError } = await supabase
       .from("assessment_answers")
       .select("question_id, value")
       .eq("assessment_id", assessment.id);
+    if (answerError) throw answerError;
 
     return { assessment, answered: answers ?? [] };
   });

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { MANUAL_BUCKET, MANUAL_OBJECT_PATH } from "./plan/constants";
+import { disabledFeature } from "./disabled-feature";
 
 export type FamilyDashboard = {
   profile: {
@@ -50,6 +51,7 @@ export type FamilyDashboard = {
 export const getFamilyDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<FamilyDashboard> => {
+    await disabledFeature();
     const { supabase, userId, claims } = context;
 
     const [
