@@ -12,11 +12,13 @@ import {
 } from "@/lib/assessment.functions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/_authenticated/app/evaluacion")({
-  head: () => ({ meta: [{ title: "Evaluación — NEUROPLAN" }, { name: "robots", content: "noindex" }] }),
+  head: () => pageMeta("Completar formularios"),
   validateSearch: (s: Record<string, unknown>) =>
-    z.object({ patient: z.string().uuid() }).parse(s),
+    z.object({ patient: z.string().uuid(), module: z.enum(["cognitive", "functional", "reflex"]).optional() }).parse(s),
   component: EvaluacionPage,
 });
 
@@ -54,20 +56,21 @@ const SCALE_OPTIONS: Record<Question["scale"], { value: number; label: string }[
 };
 
 function EvaluacionPage() {
-  const { patient } = Route.useSearch();
+  const { patient, module } = Route.useSearch();
   return (
     <HabeasDataGate>
-      <EvaluacionRunner patientId={patient} />
+      <EvaluacionRunner patientId={patient} selectedModule={module} />
     </HabeasDataGate>
   );
 }
 
-function EvaluacionRunner({ patientId }: { patientId: string }) {
+function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; selectedModule?: string }) {
   const navigate = useNavigate();
   const fetchState = useServerFn(getAssessmentState);
   const submit = useServerFn(saveAnswer);
   const complete = useServerFn(completeAssessment);
 
+  const [loadError, setLoadError] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Map<string, number>>(new Map());
@@ -99,22 +102,25 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
   // Load questions + state
   useEffect(() => {
     (async () => {
-      const { data: qs } = await supabase
+      const { data: catalog, error: catalogError } = await supabase
         .from("assessment_questions")
         .select("id, module, dimension, category, order_index, title, description, scale")
         .order("module")
         .order("order_index");
+      if (catalogError) throw catalogError;
+      const qs = selectedModule ? catalog?.filter((q) => q.module === selectedModule) : catalog;
       const state = await fetchState({ data: { patientId } });
       setQuestions((qs ?? []) as unknown as Question[]);
       setAssessmentId(state.assessment.id);
       const map = new Map<string, number>();
-      for (const a of state.answered) map.set(a.question_id, a.value);
+      for (const a of state.answered) if (qs?.some((q) => q.id === a.question_id)) map.set(a.question_id, a.value);
       setAnswers(map);
-      // Resume from first unanswered
-      const orderIndex = (qs ?? []).findIndex((q) => !map.has(q.id));
-      setCursor(orderIndex === -1 ? (qs?.length ?? 1) - 1 : orderIndex);
-    })();
-    }, [fetchState, patientId]);
+      const last = qs?.findIndex((q) => q.id === state.assessment.current_question_id) ?? -1;
+      const missing = (qs ?? []).findIndex((q) => !map.has(q.id));
+      const resumed = last >= 0 && last < (qs?.length ?? 0) - 1 ? last + 1 : missing;
+      setCursor(resumed < 0 ? Math.max(0, (qs?.length ?? 1) - 1) : resumed);
+    })().catch(() => setLoadError(true));
+    }, [fetchState, patientId, selectedModule]);
 
   const total = questions.length;
   const currentQ = questions[cursor];
@@ -135,17 +141,20 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
     setSaving(true);
     const next = new Map(answers);
     next.set(currentQ.id, value);
-    setAnswers(next);
     try {
       await submit({
         data: { assessmentId, questionId: currentQ.id, value },
       });
+      setAnswers(next);
+        else if (next.size === total) {
+        await complete({ data: { assessmentId } });
+        await navigate({ to: "/app", replace: true });
+      }
     } catch {
-      toast.error("No se pudo guardar la respuesta. Se intentará de nuevo.");
+      toast.error("No se pudo guardar. Vuelve a seleccionar tu respuesta para reintentar.");
     } finally {
       setSaving(false);
     }
-    if (cursor < total - 1) setCursor(cursor + 1);
   }
 
   async function handleComplete() {
@@ -154,14 +163,15 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
     try {
       await complete({ data: { assessmentId } });
       toast.success("¡Evaluación completada!");
-      navigate({ to: "/app/informe", search: { patient: patientId } });
+      navigate({ to: "/app", replace: true });
     } catch {
-      toast.error("No se pudo generar tu Hoja de Ruta. Intenta de nuevo.");
+      toast.error("No se pudo finalizar. Intenta de nuevo.");
     } finally {
       setCompleting(false);
     }
   }
 
+  if (loadError) return <p role="alert">No pudimos cargar tus formularios. Intenta nuevamente.</p>;
   if (!currentQ) {
     return (
       <div className="py-16 text-center text-sm text-muted-foreground">
@@ -256,12 +266,12 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
           {options.map((opt) => {
             const active = selectedValue === opt.value;
             return (
-              <button
+              <Button
                 key={`${opt.value}-${opt.label}`}
                 onClick={() => handleAnswer(opt.value)}
                 disabled={saving}
                 className={cn(
-                  "rounded-2xl border px-4 py-3 text-sm font-medium transition",
+                  "h-auto whitespace-normal rounded-2xl border px-4 py-3 text-sm font-medium transition",
                   currentQ.scale === "func10" && "px-2 py-3 text-center",
                   active
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
@@ -269,7 +279,7 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
                 )}
               >
                 {opt.label}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -281,7 +291,7 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
 
       {/* Controles */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
+        <Button
           type="button"
           onClick={() => setCursor(Math.max(0, cursor - 1))}
           disabled={cursor === 0}
@@ -289,16 +299,16 @@ function EvaluacionRunner({ patientId }: { patientId: string }) {
         >
           <ChevronLeft className="h-4 w-4" />
           Anterior
-        </button>
+        </Button>
 
         {allAnswered ? (
-          <button
+          <Button
             onClick={handleComplete}
             disabled={completing}
             className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
           >
-            {completing ? "Generando…" : "Generar Hoja de Ruta"}
-          </button>
+            {completing ? "Guardando…" : "Finalizar formulario"}
+          </Button>
         ) : (
           <span className="text-xs text-muted-foreground">
             Pregunta {cursor + 1} de {total}
@@ -329,13 +339,13 @@ function ModuleIntro({
         <div className="mt-4 space-y-3 text-sm leading-relaxed text-foreground">
           {content.body}
         </div>
-        <button
+        <Button
           type="button"
           onClick={onStart}
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+          className="mt-6 h-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
         >
           {content.cta}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -4,24 +4,15 @@ import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { Button } from "@/components/ui/button";
+import { pageMeta } from "@/lib/page-meta";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  head: () => ({
-    meta: [
-      { title: "Ingresar — NEUROPLAN" },
-      {
-        name: "description",
-        content: "Ingresa o crea tu cuenta en NEUROPLAN para comenzar la evaluación.",
-      },
-    ],
-  }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
-      ? s.next
-      : undefined,
+  head: () => pageMeta("Ingresar", "Ingresa o crea tu cuenta familiar para completar tus formularios."),
+  validateSearch: (s: Record<string, unknown>): { next?: string } => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//") && !s.next.includes("\\") ? s.next : undefined,
   }),
   component: AuthPage,
 });
@@ -87,7 +78,7 @@ function TabButton({
   children: ReactNode;
 }) {
   return (
-    <button
+    <Button
       type="button"
       onClick={onClick}
       className={cn(
@@ -98,7 +89,7 @@ function TabButton({
       )}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -150,6 +141,7 @@ function LoginForm({ onSuccess, next }: { onSuccess: () => void; next?: string }
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -195,14 +187,14 @@ function LoginForm({ onSuccess, next }: { onSuccess: () => void; next?: string }
         onChange={setPassword}
         autoComplete="current-password"
         rightSlot={
-          <button
+          <Button
             type="button"
             onClick={() => setShowPw((v) => !v)}
             aria-label={showPw ? "Ocultar contraseña" : "Mostrar contraseña"}
             className="text-muted-foreground"
           >
             {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-          </button>
+          </Button>
         }
       />
 
@@ -216,21 +208,27 @@ function LoginForm({ onSuccess, next }: { onSuccess: () => void; next?: string }
           />
           Recuérdame
         </label>
-        <button type="button" className="font-medium text-primary hover:underline">
+        <Button type="button" variant="link" disabled={recovering} onClick={async () => {
+          if (!email.trim()) { setErrorMsg("Ingresa tu correo para recuperar la contraseña."); return; }
+          setRecovering(true);
+          const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/reset-password` });
+          setRecovering(false);
+          if (error) setErrorMsg("No pudimos enviar el correo. Intenta nuevamente.");
+          else { setErrorMsg(null); toast.success("Si el correo está registrado, recibirás un enlace para recuperar tu contraseña."); }
+        }} className="font-medium text-primary hover:underline">
           ¿Olvidaste tu contraseña?
-        </button>
+        </Button>
       </div>
 
-      <button
+      <Button
         type="submit"
         disabled={loading}
         className="mt-2 rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
       >
         {loading ? "Ingresando..." : "Ingresar"}
-      </button>
+      </Button>
 
-      <SocialDivider />
-      <GoogleButton next={next} />
+
     </form>
   );
 }
@@ -268,7 +266,7 @@ function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: strin
           password,
           options: {
             emailRedirectTo:
-              window.location.origin + (next ?? "/app"),
+              window.location.origin,
             data: { full_name: name, role: "usuario" },
           },
         });
@@ -327,78 +325,27 @@ function RegisterForm({ onSuccess, next }: { onSuccess: () => void; next?: strin
         onChange={setPassword}
         autoComplete="new-password"
         rightSlot={
-          <button
+          <Button
             type="button"
             onClick={() => setShowPw((v) => !v)}
             aria-label={showPw ? "Ocultar contraseña" : "Mostrar contraseña"}
             className="text-muted-foreground"
           >
             {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-          </button>
+          </Button>
         }
       />
 
-      <button
+      <Button
         type="submit"
         disabled={loading}
         className="mt-3 rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
       >
         {loading ? "Creando..." : "Crear cuenta"}
-      </button>
+      </Button>
 
-      <SocialDivider />
-      <GoogleButton next={next} />
+
     </form>
   );
 }
 
-function SocialDivider() {
-  return (
-    <div className="my-2 flex items-center gap-3 text-xs text-muted-foreground">
-      <span className="h-px flex-1 bg-border" />
-      O continúa con
-      <span className="h-px flex-1 bg-border" />
-    </div>
-  );
-}
-
-function GoogleButton({ next }: { next?: string }) {
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        const result = await lovable.auth.signInWithOAuth("google", {
-          redirect_uri: window.location.origin + (next ?? "/app"),
-        });
-        if (result.error) toast.error(result.error.message ?? "No se pudo iniciar sesión con Google");
-      }}
-      className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-background py-3 text-sm font-medium text-foreground transition hover:bg-muted"
-    >
-      <GoogleIcon />
-      Google
-    </button>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
-      <path
-        fill="#FFC107"
-        d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"
-      />
-      <path
-        fill="#FF3D00"
-        d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"
-      />
-      <path
-        fill="#4CAF50"
-        d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 34.7 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"
-      />
-      <path
-        fill="#1976D2"
-        d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.1 5.6l6.2 5.2C40.5 36.4 44 30.7 44 24c0-1.2-.1-2.3-.4-3.5z"
-      />
-    </svg>
-  );
-}
