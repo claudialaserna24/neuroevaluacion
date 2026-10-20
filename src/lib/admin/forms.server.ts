@@ -41,8 +41,8 @@ export async function loadAdminForms(s: SupabaseClient<Database>, userId?: strin
     const children = patients.filter((p) => p.user_id === user.id).map((patient) => {
       const histories = userAssessments.filter((a) => a.patient_id === patient.id).map((a) => {
         const saved = answers.filter((r) => r.assessment_id === a.id);
-        const byId = new Map(saved.map((r) => [r.question_id, r.value]));
-        return { id: a.id, createdAt: a.created_at, forms: formProgress(questions, byId.keys()), modules: FORM_MODULES.map((module) => ({ module, label: FORM_LABELS[module], responses: questions.filter((q) => q.module === module).map((q) => ({ id: q.id, question: q.title, description: q.description, dimension: q.dimension, response: answerLabel(q.scale, byId.get(q.id)) })) })) };
+        const byId = new Map(saved.map((r) => [r.question_id, r]));
+        return { id: a.id, createdAt: a.created_at, forms: formProgress(questions, byId.keys()), modules: FORM_MODULES.map((module) => ({ module, label: FORM_LABELS[module], responses: questions.filter((q) => q.module === module).map((q) => ({ id: q.id, question: q.title, description: q.description, dimension: q.dimension, response: answerLabel(q.scale, byId.get(q.id)?.value, byId.get(q.id)?.text_value) })) })) };
       });
       return { patient, histories, forms: histories[0]?.forms ?? formProgress(questions, []) };
     });

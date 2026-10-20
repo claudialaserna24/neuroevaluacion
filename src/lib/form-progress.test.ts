@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
 function expect(value: unknown) { return { toBe(expected: unknown) { assert.equal(value, expected); } }; }
-import { formProgress, allFormsCompleted, canAdminRead, csvCell, resumeQuestion } from "./form-progress";
+import { formProgress, allFormsCompleted, canAdminRead, csvCell, resumeQuestion, answerLabel, NOT_APPLICABLE } from "./form-progress";
 const qs = [{ id: "c", module: "cognitive" }, { id: "f", module: "functional" }, { id: "r1", module: "reflex" }, { id: "r2", module: "reflex" }];
 test("empty form is not started", () => expect(formProgress(qs, [])[0].status).toBe("Sin iniciar"));
 test("partially answered form remains in progress", () => expect(formProgress(qs, ["r1"])[2].status).toBe("En progreso"));
@@ -10,4 +10,4 @@ test("final page requires all three forms", () => { expect(allFormsCompleted(for
 test("only administrator has access to all users", () => { expect(canAdminRead(["usuario", "neuropsicologo"])).toBe(false); expect(canAdminRead(["administrador"])).toBe(true); });
 test("CSV prevents spreadsheet formula injection", () => expect(csvCell("=1+1")).toBe('"\'=1+1"'));
 test("saved progress resumes at the next unanswered question", () => expect(resumeQuestion(qs, ["c", "f"], "f")).toBe(2));
-test("resumption never skips unanswered questions", () => expect(resumeQuestion(qs, ["f", "r1", "r2"], "r2")).toBe(0));
+test("resumption never skips unanswered questions", () => expect(resumeQuestion(qs, ["f", "r1", "r2"], "r2")).toBe(0));test("not applicable shows its text, not a number", () => expect(answerLabel("func10", null, NOT_APPLICABLE)).toBe("No aplica / No observable"));

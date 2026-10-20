@@ -26,7 +26,9 @@ export function resumeQuestion(questions: { id: string }[], answered: Iterable<s
   const missing = questions.findIndex((q) => !saved.has(q.id));
   return missing >= 0 ? missing : Math.max(0, questions.length - 1);
 }
-export function answerLabel(scale: string, value: number | null | undefined) {
+export const NOT_APPLICABLE = "No aplica / No observable";
+export function answerLabel(scale: string, value: number | null | undefined, text?: string | null) {
+  if (text) return text;
   if (value == null) return "Sin respuesta";
   if (scale === "cog3") return ["Nunca", "Algunas veces", "Siempre"][value] ?? String(value);
   if (scale === "reflex5") return ["0 · Ausente", "1 · Muy leve", "2 · Leve", "3 · Moderado", "4 · Marcado"][value] ?? String(value);
