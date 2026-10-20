@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Authenticated can read cerebro assets" ON storage.objects;
+CREATE POLICY "Admins can read cerebro assets" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'cerebro-assets' AND public.is_admin(auth.uid()));

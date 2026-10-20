@@ -22,6 +22,13 @@
       "when": 1792519612247,
       "tag": "0002_answer_not_applicable",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792523920231,
+      "tag": "0003_restrict_cerebro_assets_read",
+      "breakpoints": true
     }
   ]
 }
