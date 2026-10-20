@@ -146,7 +146,8 @@ function EvaluacionRunner({ patientId, selectedModule }: { patientId: string; se
         data: { assessmentId, questionId: currentQ.id, value },
       });
       setAnswers(next);
-        else if (next.size === total) {
+      if (cursor < total - 1) setCursor(cursor + 1);
+      else if (next.size === total) {
         await complete({ data: { assessmentId } });
         await navigate({ to: "/app", replace: true });
       }

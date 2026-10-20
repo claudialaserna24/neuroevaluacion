@@ -1,4 +1,6 @@
-import { test, expect } from "bun:test";
+import { test } from "node:test";
+import { strict as assert } from "node:assert";
+function expect(value: unknown) { return { toBe(expected: unknown) { assert.equal(value, expected); } }; }
 import { formProgress, allFormsCompleted, canAdminRead, csvCell } from "./form-progress";
 const qs = [{ id: "c", module: "cognitive" }, { id: "f", module: "functional" }, { id: "r1", module: "reflex" }, { id: "r2", module: "reflex" }];
 test("empty form is not started", () => expect(formProgress(qs, [])[0].status).toBe("Sin iniciar"));
