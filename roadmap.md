@@ -1,0 +1,4 @@
+- [ ] Simplificar navegación y desactivar pagos, IA y resultados sin borrar datos.
+- [ ] Conservar formularios, autoguardado y pantalla final exacta.
+- [ ] Añadir revisión administrativa completa y exportaciones CSV.
+- [ ] Verificar permisos, recuperación de contraseña y flujos.
