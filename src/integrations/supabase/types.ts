@@ -20,21 +20,24 @@ export type Database = {
           assessment_id: string
           id: string
           question_id: string
-          value: number
+          text_value: string | null
+          value: number | null
         }
         Insert: {
           answered_at?: string
           assessment_id: string
           id?: string
           question_id: string
-          value: number
+          text_value?: string | null
+          value?: number | null
         }
         Update: {
           answered_at?: string
           assessment_id?: string
           id?: string
           question_id?: string
-          value?: number
+          text_value?: string | null
+          value?: number | null
         }
         Relationships: [
           {
