@@ -8,6 +8,7 @@ export const getConsentStatus = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("user_consents")
       .select("policy_version, accepted_at")
+      .eq("user_id", context.userId)
       .eq("policy_kind", "habeas_data")
       .order("accepted_at", { ascending: false })
       .limit(1)
