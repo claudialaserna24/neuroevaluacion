@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ArrowRight, Plus } from "lucide-react";
@@ -117,6 +117,7 @@ function NewPatientForm({
 }) {
   const navigate = useNavigate();
   const create = useServerFn(createPatient);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -150,6 +151,8 @@ function NewPatientForm({
     setSaving(true);
     try {
       const row = await create({ data: payload });
+      await queryClient.invalidateQueries({ queryKey: ["family-forms"] });
+      await queryClient.invalidateQueries({ queryKey: ["my-patients"] });
       toast.success("Paciente registrado");
       onDone();
       if (row?.id) {
