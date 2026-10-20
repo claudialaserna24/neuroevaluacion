@@ -105,5 +105,6 @@ export const startEvaluationFromOnboarding = createServerFn({ method: "POST" })
       assessment = created;
     }
 
-    return { assessmentId: assessment!.id };
+    if (!assessment) throw new Error("No se pudo iniciar el formulario");
+    return { assessmentId: assessment.id };
   });

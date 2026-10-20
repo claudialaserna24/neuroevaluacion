@@ -56,6 +56,7 @@ export const getMoholkaHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { patientId: string }) => patientInput.parse(d))
   .handler(async ({ data, context }) => {
+    throw new Error("Función desactivada: NEUROPLAN solo recopila formularios");
     const { supabase, userId } = context;
     const { roadmapId } = await ensureAccess(supabase, userId, data.patientId);
     const conversationId = await ensureConversation(

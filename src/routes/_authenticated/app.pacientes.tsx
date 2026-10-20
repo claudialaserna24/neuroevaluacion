@@ -44,9 +44,7 @@ function PacientesPage() {
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               Para comenzar la evaluación necesitamos conocer algunos datos
-              básicos de tu hijo. Esta información nos permitirá personalizar
-              todo el proceso y generar posteriormente su Hoja de Ruta para el
-              Neurodesarrollo.
+              básicos de tu hijo. Esta información quedará guardada junto a tus formularios.
             </p>
           </>
         ) : (
@@ -58,8 +56,7 @@ function PacientesPage() {
               Mis pacientes
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Cada paciente tiene su propia evaluación y Hoja de Ruta para el
-              Neurodesarrollo.
+              Cada niño o niña tiene sus propios formularios.
             </p>
             {!showForm && (
               <button
@@ -160,12 +157,9 @@ function NewPatientForm({
       onDone();
       if (row?.id) {
         if (onboarding) {
-          navigate({ to: "/onboarding", search: { patient: row.id } });
+          navigate({ to: "/app" });
         } else {
-          navigate({
-            to: "/app/pacientes/$patientId",
-            params: { patientId: row.id },
-          });
+          navigate({ to: "/app" });
         }
       }
     } catch (err) {

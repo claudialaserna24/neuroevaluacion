@@ -10,6 +10,7 @@ export const regenerateInteractivePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { patientId: string }) => patientInput.parse(d))
   .handler(async ({ data, context }) => {
+    throw new Error("Función desactivada: NEUROPLAN solo recopila formularios");
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "administrador",
